@@ -128,7 +128,7 @@ void MainWindow::executeTasks()
         Task task = queue.front();
         if(task.getType() == 1)
         {
-            std::cout << "adding box" << std::endl;
+            std ::cout << "adding box" << std::endl;
             db.storeBox(task.getBoxId(),task.getTray());
 
         }
@@ -137,6 +137,7 @@ void MainWindow::executeTasks()
             if(db.checkExistingBoxes(task.getTray(), task.getBoxId()))
             {
                  std::cout << "RUN 2D imageing" << std::endl;
+
                  std::cout << "RUN 3D imaging" << std::endl;
             }
             else
