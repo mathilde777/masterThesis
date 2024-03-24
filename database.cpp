@@ -8,7 +8,7 @@
 #define EXAMPLE_HOST "tcp://127.0.0.1:3306"
 #define EXAMPLE_USER "root"
 #define EXAMPLE_PASS "linux123"
-#define EXAMPLE_DB "sys"
+#define EXAMPLE_DB "thesis"
 
 
 //CONNECTION TO DATABASE
@@ -26,7 +26,7 @@ Database::Database() {
             std::cerr << "Failed to connect to MySQL database" << std::endl;
             return;
         }
-        con->setSchema("sys");
+        con->setSchema("thesis");
          std::cout << "Connected to database 'thesis'" << std::endl;
 
     } catch (sql::SQLException& e) {
@@ -230,3 +230,56 @@ int Database::getTrayId(int box_id) {
     }
     return id;
 }
+
+
+// Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
+std::vector<int> Database::getUnstoredBoxes() {
+    std::vector<int> unstoredBoxes; // Vector to store the list of unstored box IDs
+
+    try {
+
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetUnstoredBoxes()"));
+
+        // Execute the query
+        sql::ResultSet* resultSet = pstmt->executeQuery();
+
+        while (resultSet->next()) {
+            int boxId = resultSet->getInt("id");
+            unstoredBoxes.push_back(boxId);
+        }
+
+        // Clean up
+        delete resultSet;
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return unstoredBoxes;
+}
+
+
+std::vector<int> Database::getStoredBoxes() {
+    std::vector<int> unstoredBoxes; // Vector to store the list of unstored box IDs
+
+    try {
+
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allStoredBoxes()"));
+
+        // Execute the query
+        sql::ResultSet* resultSet = pstmt->executeQuery();
+
+        while (resultSet->next()) {
+            int boxId = resultSet->getInt("boxid");
+            unstoredBoxes.push_back(boxId);
+        }
+
+        // Clean up
+        delete resultSet;
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return unstoredBoxes;
+}
+
+

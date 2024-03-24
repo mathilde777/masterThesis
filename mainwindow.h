@@ -8,7 +8,9 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include "TaskManager.h"
 #include "database.h"
+#include "qcombobox.h"
 #include "task.h"
 
 QT_BEGIN_NAMESPACE
@@ -22,8 +24,14 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-    std::vector<Task> queue;
+
     Database db;
+    TaskManager tm;
+    std::vector<int> knownBoxes;
+    std::vector<int> notStored;
+    std::vector<int> storedBoxes;
+    void populateBoxLists();
+
 private slots:
     void findButtonClicked();
     void addButtonClicked();
@@ -40,9 +48,25 @@ private:
     QPushButton *trayLeaving;
     Ui::MainWindow *ui;
     int dockedTray;
+    QList<int> addList;
+    QList<int> findList;
+    QList<int> trayList;
+    QComboBox *findComboBox;
+    QComboBox *boxComboBox;
+    QComboBox *trayComboBox;
+    QLabel *selectBoxLabel;
+    QLabel *selectBoxLabel2;
+    QLabel *selectTrayLabel;
+    QVBoxLayout *findLayout;
+    QVBoxLayout *addLayout;
+    QHBoxLayout *toleranceLayout;
+    QSlider *toleranceSlider;
+    QTimer *trayTimer;
+
 
 signals:
     void taskCompleted();
+    void trayDocked();
 };
 #endif // MAINWINDOW_H
 

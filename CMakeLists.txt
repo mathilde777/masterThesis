@@ -23,10 +23,16 @@ set(SOURCES
     addBox.cpp
     task.h
     task.cpp
+    detection2D.h
+    detection2D.cpp
 )
 
 # Add an executable target
-add_executable(simulation ${SOURCES})
+add_executable(simulation ${SOURCES}
+    TaskManager.cpp
+    TaskManager.h
+
+    )
 
 # Include MySQL Connector/C++ headers
 target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include)
@@ -34,6 +40,10 @@ target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connect
 # Link against MySQL Connector/C++ library
 link_directories(/home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/lib64)
 
+# Include libcurl headers
+find_package(CURL REQUIRED)
+target_include_directories(simulation PRIVATE ${CURL_INCLUDE_DIRS})
+
 # Link against Qt modules and MySQL Connector/C++
-target_link_libraries(simulation PRIVATE Qt6::Core Qt6::Widgets Qt6::Sql mysqlcppconn)
+target_link_libraries(simulation PRIVATE Qt6::Core Qt6::Widgets Qt6::Sql mysqlcppconn ${CURL_LIBRARIES})
 

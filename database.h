@@ -33,6 +33,9 @@ public:
     bool checkExistingBoxes(int tray_id, int box_id);
     void removeTaskFromQueue(int taskId);
     int getTrayId(int box_id);
+    std::vector<int> getUnstoredBoxes();
+    std::vector<int> getStoredBoxes();
+    std::vector<int> getKnownBoxes();
 
 public slots:
     void storeBox(int id, int tray);
