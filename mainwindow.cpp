@@ -90,11 +90,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(findButton, &QPushButton::clicked, this, &MainWindow::findButtonClicked);
 
     connect(addButton, &QPushButton::clicked, this, &MainWindow::addButtonClicked);
-
-    connect(&db, &Database::taskCompleted, this, &::MainWindow::onTaskCompleted);
-    connect(this, &MainWindow::taskCompleted, this, &::MainWindow::onTaskCompleted);
-
-
+    trayTimer = new QTimer(this);
+    trayTimer->setSingleShot(true);
+    connect(trayTimer, &QTimer::timeout, &tm, &TaskManager::trayDocked);
     populateBoxLists();
 
 }
@@ -113,14 +111,11 @@ void MainWindow::populateBoxLists() {
     addList.clear();
     findList.clear();
     trayList.clear();
-
-
     findComboBox->addItem(""); // Add an empty item to findComboBox
     boxComboBox->addItem("");  // Add an empty item to boxComboBox
     trayComboBox->addItem(""); // Add an empty item to trayComboBox
 
     notStored = db.getUnstoredBoxes();
-
     storedBoxes = db.getStoredBoxes();
 
      // Clear existing items in QList
@@ -128,31 +123,22 @@ void MainWindow::populateBoxLists() {
         addList.append(boxId);
         std::cout << boxId << std::endl;
     }
-
-
     for (int boxId : storedBoxes) {
         findList.append(boxId);
         std::cout << boxId << std::endl;
     }
-
-
-
     for (int i = 0; i <= 5; ++i) {
         trayList.append(i);
     }
-
     for (int boxId : findList) {
         findComboBox->addItem(QString::number(boxId));
     }
-
     for (int boxId : addList) {
         boxComboBox->addItem(QString::number(boxId));
     }
-
     for (int trayId : trayList) {
         trayComboBox->addItem(QString::number(trayId));
     }
-
 }
 
 
@@ -165,14 +151,14 @@ void MainWindow::findButtonClicked()
 
 
     //check if knwon and stored
-    bool known = db.checkKnownBoxes(id.toInt());
-    bool stored = db.checkStoredBoxes(id.toInt());
+   // bool known = db.checkKnownBoxes(id.toInt());
+   // bool stored = db.checkStoredBoxes(id.toInt());
 
 
     int tray = db.getTrayId(id.toInt());
     // add to database queue
-    if(known && stored)
-    {
+   // if(known && stored)
+  //  {
 
         db.addTask(id.toInt(),2,tray);
         if(tray == dockedTray && tray == 0)
@@ -181,7 +167,7 @@ void MainWindow::findButtonClicked()
 
         }
 
-    }
+  //  }
 
 
 
@@ -194,16 +180,17 @@ void MainWindow::addButtonClicked()
 
     QMessageBox::information(this, "Add", QString("Add box with id %1").arg(id));
 
+    std::cout << id.toInt() << std::endl;
     //check if this box is known and already stored
-    bool known = db.checkKnownBoxes(id.toInt());
-    bool stored = db.checkStoredBoxes(id.toInt());
+    //bool known = db.checkKnownBoxes(id.toInt());
+    //bool stored = db.checkStoredBoxes(id.toInt());
 
      std::cout << "arrived" << std::endl;
     // add to database queue
      //std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
      //std::cout << result->label << std::endl;
-     if(known && !stored)
-     {
+   //  if(known && !stored)
+     //{
      if(tray.toInt() == dockedTray && tray.toInt() == 0)
      {
         Task task = Task(0, 1,id.toInt(),dockedTray);
@@ -211,11 +198,12 @@ void MainWindow::addButtonClicked()
      }
      else
      {
-        std::cout << "adding box" << std::endl;
+
+
         db.addTask(id.toInt(),1,tray.toInt());
      }
 
-    }
+   // }
 
 }
 
@@ -223,24 +211,10 @@ void MainWindow::trayButtonClicked(int trayNumber)
 {
     std::cout << "tray docked" << std::endl;
     dockedTray = trayNumber;
-    QMessageBox::information(this, "Tray", QString("Tray %1 docked").arg(trayNumber));
-    tm.trayDocked(trayNumber);
+    QMessageBox::information(this, "Tray", QString("Tray %1 ").arg(trayNumber));
 
-
-    // grab all the tasks from the database quu
-
-    //while stille executing he taks int eh queue the tray will not change
-}
-
-void MainWindow::executeTasks()
-{
-    Database db;
+    trayTimer->start(15000); // 15 seconds
+    tm.prepTasks(trayNumber);
 
 }
 
-void MainWindow::onTaskCompleted() {
-    // Remove the completed task from the queue
-
-
-
-}

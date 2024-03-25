@@ -92,7 +92,7 @@ void Database::storeBox(int id, int tray) {
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
-    emit taskCompleted();
+    //emit taskCompleted();
 }
 
 

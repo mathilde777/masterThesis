@@ -12,6 +12,8 @@
 #include "database.h"
 #include "qcombobox.h"
 #include "task.h"
+#include <QTimer>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -36,8 +38,7 @@ private slots:
     void findButtonClicked();
     void addButtonClicked();
     void trayButtonClicked(int trayNumber);
-    void executeTasks();
-    void onTaskCompleted();
+
 
 private:
     QLineEdit *idLineEdit;
@@ -65,7 +66,6 @@ private:
 
 
 signals:
-    void taskCompleted();
     void trayDocked();
 };
 #endif // MAINWINDOW_H

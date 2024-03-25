@@ -19,11 +19,19 @@ void TaskManager::getTasks(int trayId)
         std::cout << task.getId() << std::endl; // Assuming Task has a defined output operator
     }
 
-    executeTasks();
-}
 
-void TaskManager::trayDocked(int id) {
+}
+void TaskManager::prepFirstFind()
+{
+    //here all preprocessing for the first add
+}
+void TaskManager::prepTasks(int id)
+{
     getTasks(id);
+}
+void TaskManager::trayDocked() {
+     std::cout << "tray docked executing tasks"<< std::endl;
+     executeTasks();
 }
 
 int TaskManager::executeTasks() {
@@ -40,6 +48,8 @@ int TaskManager::executeTasks() {
             if(db.checkExistingBoxes(task.getTray(), task.getBoxId()))
             {
                 std::cout << "RUN 2D imageing" << std::endl;
+                std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
+                std::cout << result->label << std::endl;
 
 
 

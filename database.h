@@ -42,7 +42,7 @@ public slots:
     void removeStoredBox(int boxId);
 
 signals:
-    void taskCompleted();
+   // void taskCompleted();
 };
 
 #endif // DATABASE_H
