@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(simulation VERSION 0.1 LANGUAGES CXX)
+project(simulation VERSION 0.1 LANGUAGES C CXX)
 
 # Set C++17 standard
 set(CMAKE_CXX_STANDARD 17)
@@ -13,7 +13,15 @@ set(CMAKE_AUTORCC ON)
 
 # Find required packages
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)
+find_package(PCL 1.3 REQUIRED COMPONENTS common io filters visualization segmentation surface)
 find_package(CURL REQUIRED)
+
+include_directories(${PCL_INCLUDE_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+link_directories(${PCL_LIBRARY_DIRS})
+
+include_directories("/home/Desktop/MasterThesis/library/lib/include")
+
 
 # Manually set MySQL Connector/C++ include directories and libraries
 #set(MYSQLCPPCONN_INCLUDE_DIRS "/home/suleyman/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include")
@@ -54,6 +62,7 @@ target_link_libraries(simulation PRIVATE
     ${MYSQLCPPCONN_LIBRARIES}
     mysqlcppconn
     pthread
+    {PCL_LIBRARIES} "/home/suleyman/Desktop/MasterThesis/library/lib/lib3DSystem.so"
 )
 
 # Optimize build
