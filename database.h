@@ -8,6 +8,8 @@
 #include <QObject>
 #include <mysql_connection.h>
 
+//change
+
 using namespace sql;
 
 class Database : public QObject {
