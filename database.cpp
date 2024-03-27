@@ -81,7 +81,7 @@ std::vector<std::unique_ptr<Task>> Database::getTasks(int tray_id) {
 
 void Database::storeBox(int id, int tray) {
     try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL StoreBox(?, ?)"));
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL store_box(?, ?)"));
         pstmt->setInt(1, id);
         pstmt->setInt(2, tray);
         pstmt->execute();

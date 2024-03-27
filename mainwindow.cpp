@@ -87,6 +87,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
 
+
     // Connect addButton to addButtonClicked() only when both box and tray are selected
     connect(findButton, &QPushButton::clicked, this, &MainWindow::findButtonClicked);
 

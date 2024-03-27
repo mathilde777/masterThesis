@@ -72,11 +72,16 @@ int TaskManager::executeTasks() {
                // std::cout << result->label << std::endl;
                 std::cout << "RUN 3D imaging" << std::endl;
 
+<<<<<<< HEAD
 /**
                 auto refPoint = Eigen::Vector3f(128, -269, -860.041);
+=======
+                // auto refPoint = Eigen::Vector3f(128, -269, -860.041);
+>>>>>>> 695bf78639adc2d8b4b3a6df3800813859c2eaff
 
-                cout << "Reference point: " << refPoint.x() << " " << refPoint.y() << " " << refPoint.z() << endl;
+                // cout << "Reference point: " << refPoint.x() << " " << refPoint.y() << " " << refPoint.z() << endl;
 
+<<<<<<< HEAD
                 auto location = pcl->findBoundingBox(filePathBoxes, filePathEmpty, refPoint, Eigen::Vector3f(0, 0, 0));
 
                 //location is type of clusterInfo ==> struct ClusterInfo { Eigen::Vector4f centroid, Eigen::Vector3f dimensions; Eigen::Quaternionf orientation; int clusterId;
@@ -88,6 +93,19 @@ int TaskManager::executeTasks() {
                     cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
                 }
 **/
+=======
+                // auto location = pcl->findBoundingBox(filePathBoxes, filePathEmpty, refPoint, Eigen::Vector3f(0, 0, 0));
+                // std::cout << "RUN 3D imaging" << std::endl;
+
+                // //location is type of clusterInfo ==> struct ClusterInfo { Eigen::Vector4f centroid, Eigen::Vector3f dimensions; Eigen::Quaternionf orientation; int clusterId;
+                // for (auto loc : location)
+                // {
+                //     cout << "Cluster ID: " << loc.clusterId << endl;
+                //     cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
+                //     cout << "Dimensions: " << loc.dimensions.x() << " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
+                //     cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
+                // }
+>>>>>>> 695bf78639adc2d8b4b3a6df3800813859c2eaff
             }
             else
             {
@@ -129,6 +147,7 @@ int TaskManager::onTaskCompleted() {
     {
         std::cout << "UPDATE DATABASE - ALL TASKS DONE" << std::endl;
     }
+    return 0; // Placeholder return value
 }
 
 int TaskManager::addBox(){
