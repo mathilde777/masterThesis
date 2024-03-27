@@ -6,10 +6,11 @@
 #include <QLabel>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),dockedTray(0)
-    , ui(new Ui::MainWindow)
+    : QMainWindow(parent),
+    ui(new Ui::MainWindow),
+    db(std::make_shared<Database>()),
+    tm(std::make_unique<TaskManager>(db))
 {
-
     ui->setupUi(this);
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -92,16 +93,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(addButton, &QPushButton::clicked, this, &MainWindow::addButtonClicked);
     trayTimer = new QTimer(this);
     trayTimer->setSingleShot(true);
-    connect(trayTimer, &QTimer::timeout, &tm, &TaskManager::trayDocked);
     populateBoxLists();
 
 }
 
 MainWindow::~MainWindow()
 {
-    delete ui;
 }
-
 
 
 // Function to populate a QComboBox with items from a QList<int>
@@ -115,8 +113,8 @@ void MainWindow::populateBoxLists() {
     boxComboBox->addItem("");  // Add an empty item to boxComboBox
     trayComboBox->addItem(""); // Add an empty item to trayComboBox
 
-    notStored = db.getUnstoredBoxes();
-    storedBoxes = db.getStoredBoxes();
+    notStored = db->getUnstoredBoxes();
+    storedBoxes = db->getStoredBoxes();
 
      // Clear existing items in QList
     for (int boxId : notStored) {
@@ -155,12 +153,12 @@ void MainWindow::findButtonClicked()
    // bool stored = db.checkStoredBoxes(id.toInt());
 
 
-    int tray = db.getTrayId(id.toInt());
+    int tray = db->getTrayId(id.toInt());
     // add to database queue
    // if(known && stored)
   //  {
 
-        db.addTask(id.toInt(),2,tray);
+    db->addTask(id.toInt(),2,tray);
         if(tray == dockedTray && tray == 0)
         {
             Task task = Task(0, 1,id.toInt(),dockedTray);
@@ -194,13 +192,13 @@ void MainWindow::addButtonClicked()
      if(tray.toInt() == dockedTray && tray.toInt() == 0)
      {
         Task task = Task(0, 1,id.toInt(),dockedTray);
-        db.addTask(id.toInt(),1,dockedTray);
+         db->addTask(id.toInt(),1,dockedTray);
      }
      else
      {
 
 
-        db.addTask(id.toInt(),1,tray.toInt());
+         db->addTask(id.toInt(),1,tray.toInt());
      }
 
    // }
@@ -214,7 +212,7 @@ void MainWindow::trayButtonClicked(int trayNumber)
     QMessageBox::information(this, "Tray", QString("Tray %1 ").arg(trayNumber));
 
     trayTimer->start(15000); // 15 seconds
-    tm.prepTasks(trayNumber);
+    tm->prepTasks(trayNumber);
 
 }
 

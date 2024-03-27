@@ -2,11 +2,10 @@
 #define DATABASE_H
 
 #include "task.h"
-#include <mysql_connection.h>
-#include <mysql_driver.h>
+#include </usr/include/mysql-cppconn-8/jdbc/mysql_connection.h>
+#include </usr/include/mysql-cppconn-8/jdbc/mysql_driver.h>
 #include <vector>
 #include <QObject>
-#include <mysql_connection.h>
 
 //change
 

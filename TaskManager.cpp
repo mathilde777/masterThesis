@@ -1,8 +1,9 @@
 
 #include "TaskManager.h"
 #include "database.h"
+#include "detection2D.h"
 
-TaskManager::TaskManager() {
+TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db){
 }
 
 TaskManager::~TaskManager() {
@@ -14,7 +15,7 @@ void TaskManager::addTask(int boxId, int trayId, int task) {
 
 void TaskManager::getTasks(int trayId)
 {
-    queue = db.getTasks(trayId);
+    queue = db->getTasks(trayId);
     for (const Task& task : queue) {
         std::cout << task.getId() << std::endl; // Assuming Task has a defined output operator
     }
@@ -40,12 +41,12 @@ int TaskManager::executeTasks() {
         if(task.getType() == 1)
         {
             std ::cout << "adding box" << std::endl;
-            db.storeBox(task.getBoxId(),task.getTray());
+            db->storeBox(task.getBoxId(),task.getTray());
 
         }
         else if(task.getType()==2)
         {
-            if(db.checkExistingBoxes(task.getTray(), task.getBoxId()))
+            if(db->checkExistingBoxes(task.getTray(), task.getBoxId()))
             {
                 std::cout << "RUN 2D imageing" << std::endl;
                 std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
@@ -70,7 +71,7 @@ int TaskManager::executeTasks() {
 }
 
 int TaskManager::onTaskCompleted() {
-    db.removeTaskFromQueue(queue.begin()->getId());
+    db->removeTaskFromQueue(queue.begin()->getId());
     queue.erase(queue.begin());
     if (!queue.empty()) {
 

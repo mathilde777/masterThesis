@@ -12,7 +12,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 # Find required packages
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)
+find_package(Qt5 REQUIRED COMPONENTS Core Widgets Sql)
 find_package(PCL 1.3 REQUIRED COMPONENTS common io filters visualization segmentation surface)
 find_package(CURL REQUIRED)
 
@@ -24,7 +24,7 @@ include_directories("/home/Desktop/MasterThesis/library/lib/include")
 
 
 # Manually set MySQL Connector/C++ include directories and libraries
-#set(MYSQLCPPCONN_INCLUDE_DIRS "/home/suleyman/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include")
+set(MYSQLCPPCONN_INCLUDE_DIRS "/usr/include/mysql-cppconn-8")
 #set(MYSQLCPPCONN_LIBRARIES "/home/suleyman/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/lib64/")
 
 # Specify the list of source files
@@ -55,14 +55,15 @@ target_include_directories(simulation PRIVATE
 
 # Link libraries (Qt modules, MySQL Connector/C++, and libcurl)
 target_link_libraries(simulation PRIVATE
-    Qt6::Core
-    Qt6::Widgets
-    Qt6::Sql
+    Qt5::Core
+    Qt5::Widgets
+    Qt5::Sql
     ${CURL_LIBRARIES}
     ${MYSQLCPPCONN_LIBRARIES}
     mysqlcppconn
     pthread
-    {PCL_LIBRARIES} "/home/suleyman/Desktop/MasterThesis/library/lib/lib3DSystem.so"
+    ${PCL_LIBRARIES}
+    "/home/suleyman/Desktop/MasterThesis/library/lib/lib3DSystem.so"
 )
 
 # Optimize build

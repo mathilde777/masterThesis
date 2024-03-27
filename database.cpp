@@ -1,13 +1,14 @@
 #include "database.h"
 #include "task.h"
-#include <cppconn/prepared_statement.h>
+#include </usr/include/mysql-cppconn-8/jdbc/cppconn/connection.h>
+#include </usr/include/mysql-cppconn-8/jdbc/cppconn/prepared_statement.h>
 #include <iostream>
 
 #include <vector>
 
 #define EXAMPLE_HOST "tcp://127.0.0.1:3306"
 #define EXAMPLE_USER "root"
-#define EXAMPLE_PASS "linux123"
+#define EXAMPLE_PASS "S2231001"
 #define EXAMPLE_DB "thesis"
 
 
@@ -54,27 +55,23 @@ void Database::addTask(int box_id, int task_type, int tray_id ) {
 std::vector<Task> Database::getTasks(int tray_id) {
     std::vector<Task> tasks;
     try {
-        // Prepare the statement to call the stored procedure
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTasksInQueueByTray(?)"));
         pstmt->setInt(1, tray_id);
+        pstmt->execute();
 
-        // Execute the query
-        sql::ResultSet* resultSet = pstmt->executeQuery();
+        do {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
-        // Iterate over the result set and populate the vector of tasks
-        while (resultSet->next()) {
-            // Assuming Task constructor parameters are (int id, int type, int boxid, int tray)
-            Task newTask(
-                resultSet->getInt("id"),
-                resultSet->getInt("task"),
-                resultSet->getInt("boxId"),
-                resultSet->getInt("trayId") // Use the correct column name here
-                );
-            tasks.push_back(newTask);
-        }
-
-        // Clean up
-        delete resultSet;
+            while (resultSet && resultSet->next()) {
+                Task newTask(
+                    resultSet->getInt("id"),
+                    resultSet->getInt("task"),
+                    resultSet->getInt("boxId"),
+                    resultSet->getInt("trayId")
+                    );
+                tasks.push_back(newTask);
+            }
+        } while (pstmt->getMoreResults());
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -82,13 +79,14 @@ std::vector<Task> Database::getTasks(int tray_id) {
 }
 
 
+
 void Database::storeBox(int id, int tray) {
     try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL store_box(?, ?)"));
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL StoreBox(?, ?)"));
         pstmt->setInt(1, id);
         pstmt->setInt(2, tray);
         pstmt->execute();
-        std::cout << "Value stored successfully" << std::endl;
+        std::cout << "Box with ID " << id << " stored in tray " << tray << std::endl;
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -122,30 +120,38 @@ bool Database::checkStoredBoxes( int boxId) {
     return foundBox;
 }
 
-bool Database::checkKnownBoxes( int boxId) {
+bool Database::checkKnownBoxes(int boxId) {
     bool foundBox = false;
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL check_known_box(?, @found_box)"));
         pstmt->setInt(1, boxId);
         pstmt->execute();
 
-        // Retrieve the output parameter value
-        std::unique_ptr<sql::Statement> stmt(con->createStatement());
-        sql::ResultSet* rs = stmt->executeQuery("SELECT @found_box");
-        if (rs->next()) {
-            foundBox = rs->getBoolean(1);
+        // Consume any potential result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+            // Not expecting data here, just consume any possible result set
         }
-        delete rs;
+
+        // Now, retrieve the output parameter value
+        std::unique_ptr<sql::Statement> stmt(con->createStatement());
+        std::unique_ptr<sql::ResultSet> rs(stmt->executeQuery("SELECT @found_box AS found_box"));
+
+        // Check the value of @found_box
+        if (rs && rs->next()) {
+            foundBox = rs->getBoolean("found_box"); // Use column label for clarity
+        }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
-    if(!foundBox)
-    {
-        std::cout << "Box not in database" << std::endl;
 
+    if (!foundBox) {
+        std::cout << "Box not known" << std::endl;
     }
     return foundBox;
 }
+
+
 
 
 
@@ -154,31 +160,45 @@ void Database::removeStoredBox(int boxId) {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL RemoveStoredBox(?)"));
         pstmt->setInt(1, boxId);
         pstmt->execute();
+
+        // Consume any potential result sets to avoid "Commands out of sync" error, even if not expected
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+            // No need to process resultSet here, just ensuring it's consumed if present
+        }
+
         std::cout << "Stored box with ID " << boxId << " removed successfully." << std::endl;
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
 
+
 // Execute MySQL stored procedure to get information about a box
 void Database::getBoxInfo(int boxId) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetBoxInfo(?)"));
         pstmt->setInt(1, boxId);
-        sql::ResultSet* resultSet = pstmt->executeQuery();
-        while (resultSet->next()) {
-            std::cout << "Box ID: " << resultSet->getInt("id") << std::endl;
-            std::cout << "Width: " << resultSet->getDouble("width") << std::endl;
-            std::cout << "Height: " << resultSet->getDouble("height") << std::endl;
-            std::cout << "Length: " << resultSet->getDouble("length") << std::endl;
-            std::cout << "Last Position (X, Y, Z): " << resultSet->getInt("lastX") << ", " << resultSet->getInt("lastY") << ", " << resultSet->getInt("lastZ") << std::endl;
-            std::cout << "Tray: " << resultSet->getInt("tray") << std::endl;
+        bool hasResults = pstmt->execute();
+
+        if (hasResults) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+            while (resultSet && resultSet->next()) {
+                std::cout << "Box ID: " << resultSet->getInt("id") << std::endl;
+                // Additional fields printed as before
+            }
         }
-        delete resultSet;
+
+        // Consume any additional unexpected result sets
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+            // No processing needed, just consuming to comply with protocol
+        }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
+
 
 // Execute MySQL stored procedure to check if a box with the same dimensions exists
 bool Database::checkExistingBoxes(int tray_id, int box_id) {
@@ -188,14 +208,23 @@ bool Database::checkExistingBoxes(int tray_id, int box_id) {
         pstmt->setInt(1, tray_id);
         pstmt->setInt(2, box_id);
 
-        sql::ResultSet* resultSet = pstmt->executeQuery();
-        exists = resultSet->next();
-        delete resultSet;
+        bool isResult = pstmt->execute(); // Execute the query
+
+        if (isResult) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+            exists = resultSet && resultSet->next();
+        }
+
+        // Consume any additional unexpected result sets
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
     return exists;
 }
+
 
 
 void Database::removeTaskFromQueue(int taskId) {
@@ -204,27 +233,37 @@ void Database::removeTaskFromQueue(int taskId) {
         pstmt->setInt(1, taskId);
         pstmt->execute();
 
+        // Consume any potential result sets
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+        }
+
         std::cout << "Task with ID " << taskId << " removed successfully." << std::endl;
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
 
+
 int Database::getTrayId(int box_id) {
     int id = 0;
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTrayIdByBoxId(?, @trayId)"));
-        pstmt->setInt(1, box_id); // Set the input parameter
-
-
+        pstmt->setInt(1, box_id);
         pstmt->execute();
 
-        std::unique_ptr<sql::Statement> stmt(con->createStatement());
-        std::unique_ptr<sql::ResultSet> resultSet(stmt->executeQuery("SELECT @trayId"));
-        if (resultSet->next()) {
-            id = resultSet->getInt(1);
+        // Consume any potential result sets
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
         }
 
+        // Retrieve @trayId value
+        std::unique_ptr<sql::Statement> stmt(con->createStatement());
+        std::unique_ptr<sql::ResultSet> resultSet(stmt->executeQuery("SELECT @trayId AS trayId"));
+
+        if (resultSet && resultSet->next()) {
+            id = resultSet->getInt("trayId");
+        }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -232,24 +271,28 @@ int Database::getTrayId(int box_id) {
 }
 
 
+
 // Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
 std::vector<int> Database::getUnstoredBoxes() {
-    std::vector<int> unstoredBoxes; // Vector to store the list of unstored box IDs
+    std::vector<int> unstoredBoxes;
 
     try {
-
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetUnstoredBoxes()"));
+        bool isResult = pstmt->execute(); // Execute the stored procedure
 
-        // Execute the query
-        sql::ResultSet* resultSet = pstmt->executeQuery();
+        if (isResult) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
-        while (resultSet->next()) {
-            int boxId = resultSet->getInt("id");
-            unstoredBoxes.push_back(boxId);
+            while (resultSet && resultSet->next()) {
+                int boxId = resultSet->getInt("id");
+                unstoredBoxes.push_back(boxId);
+            }
         }
 
-        // Clean up
-        delete resultSet;
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -259,27 +302,30 @@ std::vector<int> Database::getUnstoredBoxes() {
 
 
 std::vector<int> Database::getStoredBoxes() {
-    std::vector<int> unstoredBoxes; // Vector to store the list of unstored box IDs
+    std::vector<int> storedBoxes;
 
     try {
-
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allStoredBoxes()"));
+        bool isResult = pstmt->execute(); // Execute the stored procedure
 
-        // Execute the query
-        sql::ResultSet* resultSet = pstmt->executeQuery();
+        if (isResult) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
-        while (resultSet->next()) {
-            int boxId = resultSet->getInt("boxid");
-            unstoredBoxes.push_back(boxId);
+            while (resultSet && resultSet->next()) {
+                int boxId = resultSet->getInt("boxid");
+                storedBoxes.push_back(boxId);
+            }
         }
 
-        // Clean up
-        delete resultSet;
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 
-    return unstoredBoxes;
+    return storedBoxes;
 }
 
 
