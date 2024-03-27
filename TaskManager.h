@@ -2,15 +2,15 @@
 #define TASKMANAGER_H
 
 #include "database.h"
-#include "qobject.h"
+#include <QObject>
 #include "task.h"
-#include "detection2D.h"
+#include <memory> // For std::shared_ptr
 
 class TaskManager : public QObject {
     Q_OBJECT
 
 public:
-    TaskManager();
+    explicit TaskManager(std::shared_ptr<Database> db);
     ~TaskManager();
     void addTask(int boxId, int trayId, int task);
     void trayDocked();
@@ -21,7 +21,9 @@ public:
     void prepTasks(int id);
     void getTasks(int trayId);
     void prepFirstFind();
-     std::vector<Task> queue;
+    std::vector<Task> queue;
+    std::shared_ptr<Database> db; // Use shared_ptr for Database
+
     //Database db;
 
  signals:
@@ -29,7 +31,7 @@ public:
      void refresh();
 
  public slots:
-     void onTaskCompleted();
+    int onTaskCompleted();
 
 
 

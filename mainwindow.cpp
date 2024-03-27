@@ -6,11 +6,11 @@
 #include <QLabel>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),dockedTray(0)
-    , ui(new Ui::MainWindow)
+    : QMainWindow(parent),
+    ui(new Ui::MainWindow),
+    db(std::make_shared<Database>()),
+    tm(std::make_unique<TaskManager>(db))
 {
-
-
     ui->setupUi(this);
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -93,9 +93,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(addButton, &QPushButton::clicked, this, &MainWindow::addButtonClicked);
     trayTimer = new QTimer(this);
     trayTimer->setSingleShot(true);
-    connect(trayTimer, &QTimer::timeout, &tm, &TaskManager::trayDocked);
-
-    connect(&tm, &TaskManager::refresh, this, &MainWindow::populateBoxLists);
+    populateBoxLists();
 
     populateBoxLists();
 
@@ -106,9 +104,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    delete ui;
 }
-
 
 
 // Function to populate a QComboBox with items from a QList<int>
@@ -122,10 +118,8 @@ void MainWindow::populateBoxLists() {
     boxComboBox->addItem("");  // Add an empty item to boxComboBox
     trayComboBox->addItem(""); // Add an empty item to trayComboBox
 
-    Database dbs = Database();
-    notStored = dbs.getUnstoredBoxes();
-    Database dbd = Database();
-    storedBoxes = dbd.getStoredBoxes();
+    notStored = db->getUnstoredBoxes();
+    storedBoxes = db->getStoredBoxes();
 
      // Clear existing items in QList
     for (int boxId : notStored) {
@@ -158,28 +152,15 @@ void MainWindow::findButtonClicked()
     // Perform action with the entered ID
     QMessageBox::information(this, "Find", QString("Find button clicked with ID: %1").arg(id));
 
-
-    //check if knwon and stored
-   // bool known = db.checkKnownBoxes(id.toInt());
-   // bool stored = db.checkStoredBoxes(id.toInt());
-
-    Database db = Database();
-    std::cout << id.toInt() << std::endl;
-    int tray = db.getTrayId(id.toInt());
+    int tray = db->getTrayId(id.toInt());
     std::cout << tray << std::endl;
-    // add to database queue
-   //if(known && stored)
-  //{
 
-     Database db1 = Database();
-        db1.addTask(id.toInt(),0,tray);
-        if(tray == dockedTray && tray == 0)
-        {
+    db->addTask(id.toInt(),2,tray);
+    if(tray == dockedTray && tray == 0)
+     {
             Task task = Task(0, 1,id.toInt(),dockedTray);
 
-        }
-
-  //  }
+           db->addTask(id.toInt(),1,dockedTray);}
 
 
 
@@ -193,41 +174,31 @@ void MainWindow::addButtonClicked()
     QMessageBox::information(this, "Add", QString("Add box with id %1").arg(id));
     Database test = Database();
     std::cout << id.toInt() << std::endl;
-    //check if this box is known and already stored
-  // bool known = test.checkKnownBoxes(id.toInt());
-   // bool stored = db.checkStoredBoxes(id.toInt());
+
 
      std::cout << "arrived" << std::endl;
-    // add to database queue
-     //std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
-     //std::cout << result->label << std::endl;
-     //if(known )//&& !stored)
-    // {
+
      if(tray.toInt() == dockedTray && tray.toInt() == 0)
      {
-        Database db = Database();
         Task task = Task(0, 1,id.toInt(),dockedTray);
-        db.addTask(id.toInt(),1,dockedTray);
+        db->addTask(id.toInt(),1,dockedTray);
      }
      else
      {
 
-        Database db = Database();
-        db.addTask(id.toInt(),1,tray.toInt());
+         db->addTask(id.toInt(),1,tray.toInt());
      }
 
-   // }
 
 }
 
-void MainWindow::trayButtonClicked(int trayNumber)
-{
+void MainWindow::trayButtonClicked(int trayNumber){
     std::cout << "tray docked" << std::endl;
     dockedTray = trayNumber;
     QMessageBox::information(this, "Tray", QString("Tray %1 ").arg(trayNumber));
 
     trayTimer->start(15000); // 15 seconds
-    tm.prepTasks(trayNumber);
+    tm->prepTasks(trayNumber);
 
 }
 

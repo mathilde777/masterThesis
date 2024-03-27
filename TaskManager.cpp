@@ -1,10 +1,12 @@
 
 #include "TaskManager.h"
 #include "database.h"
+#include "detection2D.h"
 
-TaskManager::TaskManager() {
-    connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
-}
+TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
+    connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);}
+
+
 
 TaskManager::~TaskManager() {
     disconnect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
@@ -21,9 +23,7 @@ bool sortByPriority(const Task& task1, const Task& task2) {
 }
 void TaskManager::getTasks(int trayId)
 {
-     Database db = Database();
-    queue = db.getTasks(trayId);
-
+    queue = db->getTasks(trayId);
     for (const Task& task : queue) {
         std::cout << task.getId() << std::endl; 
     }
@@ -34,14 +34,19 @@ void TaskManager::getTasks(int trayId)
         std::cout << task.getId() << std::endl; 
     }
 }
+
 void TaskManager::prepFirstFind()
 {
     //here all preprocessing for the first add
 }
+
+
 void TaskManager::prepTasks(int id)
 {
     getTasks(id);
 }
+
+
 void TaskManager::trayDocked() {
      std::cout << "tray docked executing tasks"<< std::endl;
      executeTasks();
@@ -54,14 +59,12 @@ int TaskManager::executeTasks() {
         {
 
             std ::cout << "adding box" << std::endl;
-            Database db = Database();
-            db.storeBox(task.getBoxId(),task.getTray());
+            db->storeBox(task.getBoxId(),task.getTray());
 
         }
         else if(task.getType()==0)
         {
-            Database db = Database();
-            if(db.checkExistingBoxes(task.getTray(), task.getBoxId()))
+            if(db->checkExistingBoxes(task.getTray(), task.getBoxId()))
             {
                 //hre we starts 2 threads
                 // decide how to cmomprae;
@@ -79,7 +82,7 @@ int TaskManager::executeTasks() {
             }
 
             std::cout << "task completed time to remove stored box"<< task.getBoxId()  << std::endl;
-            db.removeStoredBox(task.getBoxId());
+            db->removeStoredBox(task.getBoxId());
 
         }
 
@@ -94,10 +97,8 @@ int TaskManager::executeTasks() {
     return 0; // Placeholder return value
 }
 
-void TaskManager::onTaskCompleted() {
-     Database db = Database();
-    std::cout << "arrived at complete" << std::endl;
-    db.removeTaskFromQueue(queue.begin()->getId());
+int TaskManager::onTaskCompleted() {
+    db->removeTaskFromQueue(queue.begin()->getId());
     queue.erase(queue.begin());
     emit refresh();
     for (const Task& task : queue) {

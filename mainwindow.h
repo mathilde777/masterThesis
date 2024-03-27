@@ -2,18 +2,19 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QMainWindow>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
+#include <QComboBox>
+#include <QTimer>
+#include <QLabel>
+#include <QSlider>
+#include <memory>
 #include "TaskManager.h"
 #include "database.h"
-#include "qcombobox.h"
 #include "task.h"
-#include <QTimer>
-
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -24,49 +25,51 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-  //  Database db;
-    TaskManager tm;
-    std::vector<int> knownBoxes;
-    std::vector<int> notStored;
-    std::vector<int> storedBoxes;
-    void populateBoxLists();
 
 private slots:
     void findButtonClicked();
     void addButtonClicked();
     void trayButtonClicked(int trayNumber);
 
-
 private:
-    QLineEdit *idLineEdit;
-    QLineEdit *trayIdLineEdit;
-    QPushButton *findButton;
-    QPushButton *addButton;
-    QPushButton *trayButtons[3];
-    QPushButton *trayLeaving;
-    Ui::MainWindow *ui;
-    int dockedTray;
+    void populateBoxLists();
+
+    std::shared_ptr<Database> db;
+    std::unique_ptr<TaskManager> tm;
+    std::unique_ptr<Ui::MainWindow> ui;
+    std::vector<int> knownBoxes;
+    std::vector<int> notStored;
+    std::vector<int> storedBoxes;
     QList<int> addList;
     QList<int> findList;
     QList<int> trayList;
-    QComboBox *findComboBox;
-    QComboBox *boxComboBox;
-    QComboBox *trayComboBox;
-    QLabel *selectBoxLabel;
-    QLabel *selectBoxLabel2;
-    QLabel *selectTrayLabel;
-    QVBoxLayout *findLayout;
-    QVBoxLayout *addLayout;
-    QHBoxLayout *toleranceLayout;
-    QSlider *toleranceSlider;
-    QTimer *trayTimer;
 
+    QLineEdit *idLineEdit = nullptr;
+    QLineEdit *trayIdLineEdit = nullptr;
+    QPushButton *findButton = nullptr;
+    QPushButton *addButton = nullptr;
+    QPushButton *trayButtons[3];
+    QPushButton *trayLeaving = nullptr;
+    int dockedTray = 0;
+    QComboBox *findComboBox = nullptr;
+    QComboBox *boxComboBox = nullptr;
+    QComboBox *trayComboBox = nullptr;
+    QLabel *selectBoxLabel = nullptr;
+    QLabel *selectBoxLabel2 = nullptr;
+    QLabel *selectTrayLabel = nullptr;
+    QVBoxLayout *findLayout = nullptr;
+    QVBoxLayout *addLayout = nullptr;
+    QHBoxLayout *toleranceLayout = nullptr;
+    QSlider *toleranceSlider = nullptr;
+    QTimer *trayTimer = nullptr;
 
 signals:
     void trayDocked();
 };
-#endif // MAINWINDOW_H
 
+
+
+#endif // MAINWINDOW_H
