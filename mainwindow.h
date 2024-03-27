@@ -27,7 +27,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    Database db;
+  //  Database db;
     TaskManager tm;
     std::vector<int> knownBoxes;
     std::vector<int> notStored;

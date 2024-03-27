@@ -15,7 +15,6 @@ public:
     void addTask(int boxId, int trayId, int task);
     void trayDocked();
     int executeTasks();
-    int onTaskCompleted();
     int addBox();
     int findBox();
     void update();
@@ -23,7 +22,15 @@ public:
     void getTasks(int trayId);
     void prepFirstFind();
      std::vector<Task> queue;
-    Database db;
+    //Database db;
+
+ signals:
+     void taskCompleted();
+     void refresh();
+
+ public slots:
+     void onTaskCompleted();
+
 
 
 };
