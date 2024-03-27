@@ -6,7 +6,7 @@
 #include <QLabel>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),
+    : QMainWindow(parent), dockedTray(0),
     ui(new Ui::MainWindow),
     db(std::make_shared<Database>()),
     tm(std::make_unique<TaskManager>(db))
@@ -93,10 +93,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(addButton, &QPushButton::clicked, this, &MainWindow::addButtonClicked);
     trayTimer = new QTimer(this);
     trayTimer->setSingleShot(true);
-    populateBoxLists();
+    // Assuming tm is a std::unique_ptr<TaskManager>
+    connect(trayTimer, &QTimer::timeout, tm.get(), &TaskManager::trayDocked);
+    connect(tm.get(), &TaskManager::refresh, this, &MainWindow::populateBoxLists);
 
     populateBoxLists();
-
 
 
 
@@ -172,7 +173,6 @@ void MainWindow::addButtonClicked()
     QString tray = trayComboBox->currentText();
 
     QMessageBox::information(this, "Add", QString("Add box with id %1").arg(id));
-    Database test = Database();
     std::cout << id.toInt() << std::endl;
 
 
