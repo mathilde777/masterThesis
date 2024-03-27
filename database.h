@@ -2,8 +2,8 @@
 #define DATABASE_H
 
 #include "task.h"
-#include </usr/include/mysql-cppconn-8/jdbc/mysql_connection.h>
-#include </usr/include/mysql-cppconn-8/jdbc/mysql_driver.h>
+#include <mysql_connection.h>
+#include <mysql_driver.h>
 #include <vector>
 #include <QObject>
 
@@ -25,7 +25,7 @@ public:
     void closeDatabase();
 
     void addTask(int box_id, int task_type, int tray_id);
-    std::vector<Task> getTasks(int tray_id);
+    std::vector<std::unique_ptr<Task>> getTasks(int tray_id);
 
     bool checkStoredBoxes(int boxId);
     bool checkKnownBoxes(int boxId);

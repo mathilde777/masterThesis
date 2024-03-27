@@ -5,7 +5,7 @@
 #include <QObject>
 #include "task.h"
 #include <memory> // For std::shared_ptr
-#include "/home/suleyman/Desktop/MasterThesis/library/lib/include/pcl_3d.h"
+//#include "/home/suleyman/Desktop/MasterThesis/library/lib/include/pcl_3d.h"
 
 class TaskManager : public QObject {
     Q_OBJECT
@@ -22,9 +22,9 @@ public:
     void prepTasks(int id);
     void getTasks(int trayId);
     void prepFirstFind();
-    std::vector<Task> queue;
+    std::vector<std::unique_ptr<Task>> queue;
     std::shared_ptr<Database> db; // Use shared_ptr for Database
-    std::shared_ptr<PCL_3D> pcl;
+   // std::shared_ptr<PCL_3D> pcl;
 
     //PLY Files
     std::string filePathBoxes = "/home/suleyman/Desktop/MasterThesis/ModelsV2/2box_new_Color_PointCloud.ply";

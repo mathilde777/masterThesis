@@ -1,14 +1,13 @@
 #include "database.h"
 #include "task.h"
-#include </usr/include/mysql-cppconn-8/jdbc/cppconn/connection.h>
-#include </usr/include/mysql-cppconn-8/jdbc/cppconn/prepared_statement.h>
+#include <cppconn/prepared_statement.h>
 #include <iostream>
 
 #include <vector>
 
 #define EXAMPLE_HOST "tcp://127.0.0.1:3306"
 #define EXAMPLE_USER "root"
-#define EXAMPLE_PASS "S2231001"
+#define EXAMPLE_PASS "linux123"
 #define EXAMPLE_DB "thesis"
 
 
@@ -52,8 +51,8 @@ void Database::addTask(int box_id, int task_type, int tray_id ) {
     }
 }
 //std::vector<std::tuple<int, std::string, int, int>>
-std::vector<Task> Database::getTasks(int tray_id) {
-    std::vector<Task> tasks;
+std::vector<std::unique_ptr<Task>> Database::getTasks(int tray_id) {
+    std::vector<std::unique_ptr<Task>> tasks;
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTasksInQueueByTray(?)"));
         pstmt->setInt(1, tray_id);
@@ -63,13 +62,13 @@ std::vector<Task> Database::getTasks(int tray_id) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
             while (resultSet && resultSet->next()) {
-                Task newTask(
+                auto newTask = std::make_unique<Task>(
                     resultSet->getInt("id"),
                     resultSet->getInt("task"),
                     resultSet->getInt("boxId"),
                     resultSet->getInt("trayId")
                     );
-                tasks.push_back(newTask);
+                tasks.push_back(std::move(newTask));
             }
         } while (pstmt->getMoreResults());
     } catch (sql::SQLException& e) {
@@ -248,7 +247,7 @@ void Database::removeTaskFromQueue(int taskId) {
 int Database::getTrayId(int box_id) {
     int id = 0;
     try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTrayIdByBoxId(?, @trayId)"));
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTrayIdByBoxId(?)"));
         pstmt->setInt(1, box_id);
         pstmt->execute();
 
@@ -259,10 +258,10 @@ int Database::getTrayId(int box_id) {
 
         // Retrieve @trayId value
         std::unique_ptr<sql::Statement> stmt(con->createStatement());
-        std::unique_ptr<sql::ResultSet> resultSet(stmt->executeQuery("SELECT @trayId AS trayId"));
+        std::unique_ptr<sql::ResultSet> resultSet(stmt->executeQuery("SELECT @trayid"));
 
         if (resultSet && resultSet->next()) {
-            id = resultSet->getInt("trayId");
+            id = resultSet->getInt("trayid");
         }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
@@ -300,6 +299,33 @@ std::vector<int> Database::getUnstoredBoxes() {
     return unstoredBoxes;
 }
 
+// Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
+std::vector<int> Database::getKnownBoxes() {
+    std::vector<int> unstoredBoxes;
+
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allKNownBoxes()"));
+        bool isResult = pstmt->execute(); // Execute the stored procedure
+
+        if (isResult) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+
+            while (resultSet && resultSet->next()) {
+                int boxId = resultSet->getInt("id");
+                unstoredBoxes.push_back(boxId);
+            }
+        }
+
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return unstoredBoxes;
+}
 
 std::vector<int> Database::getStoredBoxes() {
     std::vector<int> storedBoxes;

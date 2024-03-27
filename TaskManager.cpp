@@ -16,22 +16,23 @@ void TaskManager::addTask(int boxId, int trayId, int task) {
     // Implementation for adding a task
 }
 
-bool sortByPriority(const Task& task1, const Task& task2) {
-    if (task1.task_type != task2.task_type)
-        return task1.task_type < task2.task_type;
-    return task1.id < task2.id;
+bool sortByPriority(const std::unique_ptr<Task>& task1, const std::unique_ptr<Task>& task2) {
+    if (task1->getType() != task2->getType())
+        return task1->getType() < task2->getType();
+    return task1->getId() < task2->getId();
 }
+
 void TaskManager::getTasks(int trayId)
 {
     queue = db->getTasks(trayId);
-    for (const Task& task : queue) {
-        std::cout << task.getId() << std::endl; 
+    for (const auto& task : queue) {
+        std::cout << "TASK: " << task->getId() << std::endl;
     }
     
     //sort is so the adds are first!!!!
-    sort(queue.begin(), queue.end(), sortByPriority);  
-    for (const Task& task : queue) {
-        std::cout << task.getId() << std::endl; 
+    sort(queue.begin(), queue.end(), sortByPriority);
+    for (const auto& task : queue) {
+        std::cout << "TASK: " << task->getId() << std::endl;
     }
 }
 
@@ -54,31 +55,29 @@ void TaskManager::trayDocked() {
 
 int TaskManager::executeTasks() {
     if (!queue.empty()) {
-        Task task = queue.front();
-        if(task.getType() == 1)
-        {
-
-            std ::cout << "adding box" << std::endl;
-            db->storeBox(task.getBoxId(),task.getTray());
+        auto task = std::move(queue.front());
+        if (task->getType() == 1) {
+            std::cout << "adding box" << std::endl;
+            db->storeBox(task->getBoxId(), task->getTray());
 
         }
-        else if(task.getType()==0)
+        else if(task->getType()==0)
         {
-            if(db->checkExistingBoxes(task.getTray(), task.getBoxId()))
+            if(db->checkExistingBoxes(task->getTray(), task->getBoxId()))
             {
                 //hre we starts 2 threads
                 // decide how to cmomprae;
                 std::cout << "RUN 2D imageing" << std::endl;
-                std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
-                std::cout << result->label << std::endl;
+                //std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
+               // std::cout << result->label << std::endl;
+                std::cout << "RUN 3D imaging" << std::endl;
 
-
+/**
                 auto refPoint = Eigen::Vector3f(128, -269, -860.041);
 
                 cout << "Reference point: " << refPoint.x() << " " << refPoint.y() << " " << refPoint.z() << endl;
 
                 auto location = pcl->findBoundingBox(filePathBoxes, filePathEmpty, refPoint, Eigen::Vector3f(0, 0, 0));
-                std::cout << "RUN 3D imaging" << std::endl;
 
                 //location is type of clusterInfo ==> struct ClusterInfo { Eigen::Vector4f centroid, Eigen::Vector3f dimensions; Eigen::Quaternionf orientation; int clusterId;
                 for (auto loc : location)
@@ -88,14 +87,15 @@ int TaskManager::executeTasks() {
                     cout << "Dimensions: " << loc.dimensions.x() << " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
                     cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
                 }
+**/
             }
             else
             {
                 std::cout << "RUN 3D imaging" << std::endl;
             }
 
-            std::cout << "task completed time to remove stored box"<< task.getBoxId()  << std::endl;
-            db->removeStoredBox(task.getBoxId());
+            std::cout << "task completed time to remove stored box"<< task->getBoxId()  << std::endl;
+            db->removeStoredBox(task->getBoxId());
 
         }
 
@@ -111,11 +111,13 @@ int TaskManager::executeTasks() {
 }
 
 int TaskManager::onTaskCompleted() {
-    db->removeTaskFromQueue(queue.begin()->getId());
+
+    db->removeTaskFromQueue(std::move(queue.front())->getId());
+
     queue.erase(queue.begin());
     emit refresh();
-    for (const Task& task : queue) {
-        std::cout << task.getId() << std::endl;
+    for (const auto& task : queue) {
+        std::cout << task->getId() << std::endl;
     }
 
     if (!queue.empty()) {
@@ -129,7 +131,7 @@ int TaskManager::onTaskCompleted() {
     }
 }
 
-int TaskManager::addBox() {
+int TaskManager::addBox(){
     // Implementation for adding a box
     return 0; // Placeholder return value
 }

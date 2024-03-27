@@ -119,7 +119,9 @@ void MainWindow::populateBoxLists() {
     boxComboBox->addItem("");  // Add an empty item to boxComboBox
     trayComboBox->addItem(""); // Add an empty item to trayComboBox
 
-    notStored = db->getUnstoredBoxes();
+    notStored.clear();
+    storedBoxes.clear();
+    notStored = db->getKnownBoxes();
     storedBoxes = db->getStoredBoxes();
 
      // Clear existing items in QList
@@ -144,7 +146,6 @@ void MainWindow::populateBoxLists() {
         trayComboBox->addItem(QString::number(trayId));
     }
 }
-
 
 
 void MainWindow::findButtonClicked()
