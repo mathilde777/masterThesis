@@ -111,6 +111,8 @@ bool Database::checkStoredBoxes( int boxId) {
             foundBox = rs->getBoolean(1);
         }
         delete rs;
+        pstmt->clearParameters();
+        stmt->close();
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -136,6 +138,8 @@ bool Database::checkKnownBoxes( int boxId) {
             foundBox = rs->getBoolean(1);
         }
         delete rs;
+        pstmt->clearParameters();
+        stmt->close();
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -149,16 +153,6 @@ bool Database::checkKnownBoxes( int boxId) {
 
 
 
-void Database::removeStoredBox(int boxId) {
-    try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL RemoveStoredBox(?)"));
-        pstmt->setInt(1, boxId);
-        pstmt->execute();
-        std::cout << "Stored box with ID " << boxId << " removed successfully." << std::endl;
-    } catch (sql::SQLException& e) {
-        std::cerr << "SQL error: " << e.what() << std::endl;
-    }
-}
 
 // Execute MySQL stored procedure to get information about a box
 void Database::getBoxInfo(int boxId) {
@@ -179,8 +173,6 @@ void Database::getBoxInfo(int boxId) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
-
-// Execute MySQL stored procedure to check if a box with the same dimensions exists
 bool Database::checkExistingBoxes(int tray_id, int box_id) {
     bool exists = false;
     try {
@@ -188,8 +180,11 @@ bool Database::checkExistingBoxes(int tray_id, int box_id) {
         pstmt->setInt(1, tray_id);
         pstmt->setInt(2, box_id);
 
+        // Execute the stored procedure
         sql::ResultSet* resultSet = pstmt->executeQuery();
-        exists = resultSet->next();
+        if (resultSet->next()) {
+            exists = resultSet->getBoolean("exists_same_dimensions");
+        }
         delete resultSet;
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
@@ -197,6 +192,16 @@ bool Database::checkExistingBoxes(int tray_id, int box_id) {
     return exists;
 }
 
+void Database::removeStoredBox(int boxId) {
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL RemoveStoredBox(?)"));
+        pstmt->setInt(1, boxId);
+        pstmt->execute();
+        std::cout << "Stored box with ID " << boxId << " removed successfully." << std::endl;
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+}
 
 void Database::removeTaskFromQueue(int taskId) {
     try {
@@ -213,19 +218,22 @@ void Database::removeTaskFromQueue(int taskId) {
 int Database::getTrayId(int box_id) {
     int id = 0;
     try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTrayIdByBoxId(?, @trayId)"));
+        std::cout << "boxxxxxxxxxxx" << box_id << std::endl;
+
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTrayIdByBoxId(?)"));
         pstmt->setInt(1, box_id); // Set the input parameter
 
-
-        pstmt->execute();
-
-        std::unique_ptr<sql::Statement> stmt(con->createStatement());
-        std::unique_ptr<sql::ResultSet> resultSet(stmt->executeQuery("SELECT @trayId"));
+     //   pstmt->execute();
+        sql::ResultSet* resultSet = pstmt->executeQuery();
+        // Retrieve the value of trayid from the stored procedure result set
+     //   std::unique_ptr<sql::Statement> stmt(con->createStatement());
+     //   std::unique_ptr<sql::ResultSet> resultSet(stmt->executeQuery("SELECT @trayid"));
         if (resultSet->next()) {
-            id = resultSet->getInt(1);
-        }
-
-    } catch (sql::SQLException& e) {
+            id = resultSet->getInt("trayid"); // Retrieve the value of trayid from the result set
+            std::cout << "trayyyyyyyyy" << id << std::endl;
+       }
+    }
+    catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
     return id;
@@ -250,6 +258,8 @@ std::vector<int> Database::getUnstoredBoxes() {
 
         // Clean up
         delete resultSet;
+        pstmt->clearParameters();
+
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -275,6 +285,8 @@ std::vector<int> Database::getStoredBoxes() {
 
         // Clean up
         delete resultSet;
+        pstmt->clearParameters();
+
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }

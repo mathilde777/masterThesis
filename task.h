@@ -1,6 +1,10 @@
 #ifndef TASK_H
 #define TASK_H
 
+
+// 0 -> find
+// 1-> add
+//2 -> update
 class Task{
 public:
     int id;
