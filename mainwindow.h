@@ -33,16 +33,17 @@ private slots:
     void findButtonClicked();
     void addButtonClicked();
     void trayButtonClicked(int trayNumber);
-
+   void populateBoxLists();
+    void updateDockedInfo();
 private:
-    void populateBoxLists();
+
 
     std::shared_ptr<Database> db;
     std::unique_ptr<TaskManager> tm;
     std::unique_ptr<Ui::MainWindow> ui;
-    std::vector<int> knownBoxes;
-    std::vector<int> notStored;
-    std::vector<int> storedBoxes;
+    std::vector<std::pair<int, std::string>> knownBoxes;
+    std::vector<std::pair<int, std::string>> notStored;
+    std::vector<std::pair<int, std::string>> storedBoxes;
     QList<int> addList;
     QList<int> findList;
     QList<int> trayList;
@@ -65,9 +66,11 @@ private:
     QHBoxLayout *toleranceLayout = nullptr;
     QSlider *toleranceSlider = nullptr;
     QTimer *trayTimer = nullptr;
+    QLabel *dockedInfoLabel;
 
 signals:
     void trayDocked();
+    void refresh();
 };
 
 

@@ -25,7 +25,7 @@ public:
     void closeDatabase();
 
     void addTask(int box_id, int task_type, int tray_id);
-    std::vector<std::unique_ptr<Task>> getTasks(int tray_id);
+    std::vector<std::shared_ptr<Task>> getTasks(int tray_id);
 
     bool checkStoredBoxes(int boxId);
     bool checkKnownBoxes(int boxId);
@@ -35,8 +35,8 @@ public:
     void removeTaskFromQueue(int taskId);
     int getTrayId(int box_id);
     std::vector<int> getUnstoredBoxes();
-    std::vector<int> getStoredBoxes();
-    std::vector<int> getKnownBoxes();
+   std::vector<std::pair<int, std::string>>  getStoredBoxes();
+    std::vector<std::pair<int, std::string>> getKnownBoxes();
 
 public slots:
     void storeBox(int id, int tray);

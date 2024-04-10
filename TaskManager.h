@@ -21,14 +21,12 @@ public:
     void update();
     void prepTasks(int id);
     void getTasks(int trayId);
-    void prepFirstFind();
-    std::vector<std::unique_ptr<Task>> queue;
+
+    std::vector<std::shared_ptr<Task>> queue;
     std::shared_ptr<Database> db; // Use shared_ptr for Database
-<<<<<<< HEAD
+
    // std::shared_ptr<PCL_3D> pcl;
-=======
-    //std::shared_ptr<PCL_3D> pcl;
->>>>>>> 695bf78639adc2d8b4b3a6df3800813859c2eaff
+
 
     //PLY Files
     std::string filePathBoxes = "/home/suleyman/Desktop/MasterThesis/ModelsV2/2box_new_Color_PointCloud.ply";
@@ -36,13 +34,17 @@ public:
     std::string filePathBrownBox = "/home/suleyman/Desktop/MasterThesis/ModelsV2/brownBox_new_Color_PointCloud.ply";
 
     //Database db;
+    int currentTaskIndex;
+    bool preparingNextTask;
 
  signals:
      void taskCompleted();
      void refresh();
+     void trayDockedUpdate();
 
  public slots:
     int onTaskCompleted();
+    void prepNextTask();
 
 
 

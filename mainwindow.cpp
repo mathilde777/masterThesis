@@ -14,8 +14,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
-    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
+    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
+    dockedInfoLabel = new QLabel("No tray docked", this); // Initialize the QLabel
+    mainLayout->addWidget(dockedInfoLabel);
     // Find section
     QVBoxLayout *findLayout = new QVBoxLayout;
     selectBoxLabel = new QLabel("Select Stored Box:", this);
@@ -97,10 +99,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Assuming tm is a std::unique_ptr<TaskManager>
     connect(trayTimer, &QTimer::timeout, tm.get(), &TaskManager::trayDocked);
     connect(tm.get(), &TaskManager::refresh, this, &MainWindow::populateBoxLists);
-
+    connect(tm.get(), &TaskManager::trayDockedUpdate, this, &MainWindow::updateDockedInfo);
     populateBoxLists();
-
-
 
 }
 
@@ -116,6 +116,12 @@ void MainWindow::populateBoxLists() {
     addList.clear();
     findList.clear();
     trayList.clear();
+    ;
+
+    findComboBox->clear();
+    boxComboBox->clear();
+    trayComboBox->clear();
+
     findComboBox->addItem(""); // Add an empty item to findComboBox
     boxComboBox->addItem("");  // Add an empty item to boxComboBox
     trayComboBox->addItem(""); // Add an empty item to trayComboBox
@@ -125,82 +131,84 @@ void MainWindow::populateBoxLists() {
     notStored = db->getKnownBoxes();
     storedBoxes = db->getStoredBoxes();
 
-     // Clear existing items in QList
-    for (int boxId : notStored) {
-        addList.append(boxId);
-        std::cout << boxId << std::endl;
+    for (const auto& box :storedBoxes) {
+        int boxId = box.first;
+        std::string boxName = box.second;
+        findComboBox->addItem(QString("%1 - %2").arg(boxId).arg(QString::fromStdString(boxName)));
     }
-    for (int boxId : storedBoxes) {
-        findList.append(boxId);
-        std::cout << boxId << std::endl;
+    for (const auto& box : notStored ) {
+        int boxId = box.first;
+        std::string boxName = box.second;
+        boxComboBox->addItem(QString("%1 - %2").arg(boxId).arg(QString::fromStdString(boxName)));
     }
-    for (int i = 0; i <= 5; ++i) {
-        trayList.append(i);
-    }
-    for (int boxId : findList) {
-        findComboBox->addItem(QString::number(boxId));
-    }
-    for (int boxId : addList) {
-        boxComboBox->addItem(QString::number(boxId));
-    }
-    for (int trayId : trayList) {
+    for (int trayId = 0; trayId <= 5; ++trayId) {
         trayComboBox->addItem(QString::number(trayId));
     }
 }
 
 
+
 void MainWindow::findButtonClicked()
 {
-    QString id = findComboBox->currentText();
-    // Perform action with the entered ID
-    QMessageBox::information(this, "Find", QString("Find button clicked with ID: %1").arg(id));
-
-    int tray = db->getTrayId(id.toInt());
-    std::cout << tray << std::endl;
-
-    db->addTask(id.toInt(),2,tray);
-    if(tray == dockedTray && tray == 0)
-     {
-            Task task = Task(0, 1,id.toInt(),dockedTray);
-
-           db->addTask(id.toInt(),1,dockedTray);}
-
-
-
+    QString selectedtext = findComboBox->currentText();
+    QMessageBox::information(this, "Find", QString("Find button clicked with ID: %1").arg(selectedtext));
+    QStringList parts = selectedtext.split(" - "); // Split the text using the delimiter "-"
+    if (parts.size() == 2) {
+        QString idStr = parts[0]; // Extract the first part which should be the ID
+        int id = idStr.toInt(); // Convert the ID string to an integer
+        QMessageBox::information(this, "Find", QString("Find button clicked with ID: %1").arg(id));
+        std::cout << "find idsssssssss" << id <<std::endl;
+        int tray = db->getTrayId(id);
+        db->addTask(id, 0, tray); // Assuming 0 is the task type for finding
+    } else {
+        QMessageBox::warning(this, "Error", "Invalid selection");
+    }
 }
 
 void MainWindow::addButtonClicked()
 {
-    QString id = boxComboBox->currentText();
-    QString tray = trayComboBox->currentText();
+    QString idText = boxComboBox->currentText();
+    QStringList parts = idText.split(" - "); // Split the text using the delimiter "-"
+    if (parts.size() == 2) {
+        QString idStr = parts[0]; // Extract the first part which should be the ID
+        int id = idStr.toInt(); // Convert the ID string to an integer
 
-    QMessageBox::information(this, "Add", QString("Add box with id %1").arg(id));
-    std::cout << id.toInt() << std::endl;
+        QString tray = trayComboBox->currentText();
 
+        QMessageBox::information(this, "Add", QString("Add box with id %1").arg(id));
+        std::cout << id << std::endl;
 
-     std::cout << "arrived" << std::endl;
+        std::cout << "arrived" << std::endl;
 
-     if(tray.toInt() == dockedTray && tray.toInt() == 0)
-     {
-        Task task = Task(0, 1,id.toInt(),dockedTray);
-        db->addTask(id.toInt(),1,dockedTray);
-     }
-     else
-     {
-
-         db->addTask(id.toInt(),1,tray.toInt());
-     }
-
+        if (tray.toInt() == dockedTray && tray.toInt() == 0)
+        {
+            Task task = Task(0, 1, id, dockedTray); // Assuming 0 is the task type for adding
+            db->addTask(id, 1, dockedTray);
+        }
+        else
+        {
+            db->addTask(id, 1, tray.toInt());
+        }
+    } else {
+        QMessageBox::warning(this, "Error", "Invalid selection");
+    }
 
 }
 
 void MainWindow::trayButtonClicked(int trayNumber){
-    std::cout << "tray docked" << std::endl;
+    std::cout << "tray docking" << std::endl;
     dockedTray = trayNumber;
     QMessageBox::information(this, "Tray", QString("Tray %1 ").arg(trayNumber));
+    QString info = QString("Tray %1 docking").arg(trayNumber);
+    dockedInfoLabel->setText(info);
 
     trayTimer->start(15000); // 15 seconds
     tm->prepTasks(trayNumber);
 
+}
+
+void MainWindow::updateDockedInfo() {
+    QString info = QString("Tray %1 docked").arg(dockedTray);
+    dockedInfoLabel->setText(info);
 }
 

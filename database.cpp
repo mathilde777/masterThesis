@@ -45,14 +45,14 @@ void Database::addTask(int box_id, int task_type, int tray_id ) {
         pstmt->setInt(2, task_type);
         pstmt->setInt(3, tray_id);
         pstmt->execute();
-        std::cout << "Task added to the queue" << std::endl;
+        std::cout << "Task added to the queue with box id " << box_id << std::endl;
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
 //std::vector<std::tuple<int, std::string, int, int>>
-std::vector<std::unique_ptr<Task>> Database::getTasks(int tray_id) {
-    std::vector<std::unique_ptr<Task>> tasks;
+std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
+    std::vector<std::shared_ptr<Task>> tasks;
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTasksInQueueByTray(?)"));
         pstmt->setInt(1, tray_id);
@@ -62,13 +62,13 @@ std::vector<std::unique_ptr<Task>> Database::getTasks(int tray_id) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
             while (resultSet && resultSet->next()) {
-                auto newTask = std::make_unique<Task>(
+                auto newTask = std::make_shared<Task>(
                     resultSet->getInt("id"),
                     resultSet->getInt("task"),
                     resultSet->getInt("boxId"),
                     resultSet->getInt("trayId")
                     );
-                tasks.push_back(std::move(newTask));
+                tasks.push_back(newTask);
             }
         } while (pstmt->getMoreResults());
     } catch (sql::SQLException& e) {
@@ -243,32 +243,29 @@ void Database::removeTaskFromQueue(int taskId) {
     }
 }
 
-
 int Database::getTrayId(int box_id) {
     int id = 0;
+
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetTrayIdByBoxId(?)"));
         pstmt->setInt(1, box_id);
-        pstmt->execute();
+        bool hasResults = pstmt->execute(); // Execute the stored procedure
 
-        // Consume any potential result sets
-        while (pstmt->getMoreResults()) {
-            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
-        }
+        do {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
-        // Retrieve @trayId value
-        std::unique_ptr<sql::Statement> stmt(con->createStatement());
-        std::unique_ptr<sql::ResultSet> resultSet(stmt->executeQuery("SELECT @trayid"));
+            // Check if the result set is valid and process it
+            if (resultSet && resultSet->next()) {
+                id = resultSet->getInt("trayid");
+            }
+        } while (pstmt->getMoreResults()); // Consume any additional result sets
 
-        if (resultSet && resultSet->next()) {
-            id = resultSet->getInt("trayid");
-        }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
+
     return id;
 }
-
 
 
 // Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
@@ -300,11 +297,11 @@ std::vector<int> Database::getUnstoredBoxes() {
 }
 
 // Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
-std::vector<int> Database::getKnownBoxes() {
-    std::vector<int> unstoredBoxes;
+std::vector<std::pair<int, std::string>> Database::getKnownBoxes() {
+    std::vector<std::pair<int, std::string>> knownBoxes;
 
     try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allKNownBoxes()"));
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allKnownBoxes()"));
         bool isResult = pstmt->execute(); // Execute the stored procedure
 
         if (isResult) {
@@ -312,7 +309,8 @@ std::vector<int> Database::getKnownBoxes() {
 
             while (resultSet && resultSet->next()) {
                 int boxId = resultSet->getInt("id");
-                unstoredBoxes.push_back(boxId);
+                std::string boxName = resultSet->getString("productName");
+                knownBoxes.push_back(std::make_pair(boxId, boxName));
             }
         }
 
@@ -324,11 +322,12 @@ std::vector<int> Database::getKnownBoxes() {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 
-    return unstoredBoxes;
+    return knownBoxes;
 }
 
-std::vector<int> Database::getStoredBoxes() {
-    std::vector<int> storedBoxes;
+
+std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
+    std::vector<std::pair<int, std::string>> storedBoxes;
 
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allStoredBoxes()"));
@@ -338,8 +337,10 @@ std::vector<int> Database::getStoredBoxes() {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
             while (resultSet && resultSet->next()) {
+                int id = resultSet->getInt("id");
                 int boxId = resultSet->getInt("boxid");
-                storedBoxes.push_back(boxId);
+                std::string boxName = resultSet->getString("productName");
+                storedBoxes.push_back(std::make_pair(id, boxName));
             }
         }
 
