@@ -2,10 +2,22 @@
 #include "TaskManager.h"
 #include "database.h"
 #include "detection2D.h"
+#include "qeventloop.h"
+#include "qtmetamacros.h"
+#include "taskPreparer.h"
 #include <QTimer>
+#include <memory>
 
 TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
-    connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);}
+    connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
+
+
+    executionTimer = new QTimer(this);
+  //  connect(executionTimer, &QTimer::timeout, this, &TaskManager::checkTasks);
+    executionTimer->start(1000); // Adjust timeout interval as needed
+    taskExecuting = false;
+    donePreparing =false;
+}
 
 
 
@@ -13,64 +25,46 @@ TaskManager::~TaskManager() {
     disconnect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
 
 }
-void TaskManager::addTask(int boxId, int trayId, int task) {
-    // Implementation for adding a task
-}
-
-bool sortByPriority(const std::shared_ptr<Task>& task1, const std::shared_ptr<Task>& task2) {
-    if (task1->getType() != task2->getType())
-        return task1->getType() < task2->getType();
-    return task1->getId() < task2->getId();
-}
-
-void TaskManager::getTasks(int trayId)
-{
-    queue = db->getTasks(trayId);
-    for (const auto& task : queue) {
-        std::cout << "TASK: " << task->getId() << std::endl;
-    }
-    
-    //sort is so the adds are first!!!!
-   // sort(queue.begin(), queue.end(), sortByPriority);
-  //  for (const auto& task : queue) {
-   //     std::cout << "TASK: " << task->getId() << std::endl;
-  //  }
-}
-
-void TaskManager::prepNextTask()
-{
-    if (currentTaskIndex + 1 < queue.size()) {
-        preparingNextTask = true;
-        // Prepare the next task
-        std::shared_ptr<Task> nextTask = queue[currentTaskIndex + 1];
-        // ...
-
-        // Once preparation is completed, execute the current task
-        preparingNextTask = false;
-        QTimer::singleShot(0, this, &TaskManager::taskCompleted);
-    } else {
-        // All tasks are completed
-        emit onTaskCompleted();
-    }
-}
 
 
 void TaskManager::prepTasks(int id)
 {
-    getTasks(id);
+    std::cout << "about to make the tasks"<< std::endl;
+    QThread* thread = new QThread;
+
+    TaskPreparer* preparer = new TaskPreparer(id,db);
+
+    preparer->moveToThread(thread);
+
+    connect(preparer, &TaskPreparer::taskPrepared, this, &TaskManager::onTaskPrepared);
+    connect(thread, &QThread::started, preparer, &::TaskPreparer::prepareTask);
+
+    connect(preparer, &TaskPreparer::finished, this, &TaskManager::preparingDone); // Corrected connection
+
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+    thread->start();
+
 
 }
 
+
+void TaskManager::preparingDone() {
+    std::cout << "DONE PREPARING"<< std::endl;
+    donePreparing = true; // Set the flag to true when the thread is finished preparing tasks
+}
 
 void TaskManager::trayDocked() {
      std::cout << "tray docked executing tasks"<< std::endl;
-     executeTasks();
+//executeTasks();
+     startExecutionLoop();
      emit trayDockedUpdate();
 }
 
-int TaskManager::executeTasks() {
-    if (!queue.empty()) {
-        auto task = queue.front();
+void TaskManager::executeTasks() {
+    if ( !taskExecuting) {
+        auto task = executingQueue.front();
+        // Set the taskExecuting flag to true to indicate that a task is being executed
+        taskExecuting = true;
         if (task->getType() == 1) {
             std::cout << "adding box" << std::endl;
             db->storeBox(task->getBoxId(), task->getTray());
@@ -84,43 +78,8 @@ int TaskManager::executeTasks() {
                 // decide how to cmomprae;
                 std::cout << "RUN 2D imageing" << std::endl;
                 //std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
-               // std::cout << result->label << std::endl;
+                // std::cout << result->label << std::endl;
                 std::cout << "RUN 3D imaging" << std::endl;
-
-
-/**
-                auto refPoint = Eigen::Vector3f(128, -269, -860.041);
-=======
-                // auto refPoint = Eigen::Vector3f(128, -269, -860.041);
->>>>>>> 695bf78639adc2d8b4b3a6df3800813859c2eaff
-
-                // cout << "Reference point: " << refPoint.x() << " " << refPoint.y() << " " << refPoint.z() << endl;
-
-<<<<<<< HEAD
-                auto location = pcl->findBoundingBox(filePathBoxes, filePathEmpty, refPoint, Eigen::Vector3f(0, 0, 0));
-
-                //location is type of clusterInfo ==> struct ClusterInfo { Eigen::Vector4f centroid, Eigen::Vector3f dimensions; Eigen::Quaternionf orientation; int clusterId;
-                for (auto loc : location)
-                {
-                    cout << "Cluster ID: " << loc.clusterId << endl;
-                    cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
-                    cout << "Dimensions: " << loc.dimensions.x() << " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
-                    cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
-                }
-**/
-
-                // auto location = pcl->findBoundingBox(filePathBoxes, filePathEmpty, refPoint, Eigen::Vector3f(0, 0, 0));
-                // std::cout << "RUN 3D imaging" << std::endl;
-
-                // //location is type of clusterInfo ==> struct ClusterInfo { Eigen::Vector4f centroid, Eigen::Vector3f dimensions; Eigen::Quaternionf orientation; int clusterId;
-                // for (auto loc : location)
-                // {
-                //     cout << "Cluster ID: " << loc.clusterId << endl;
-                //     cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
-                //     cout << "Dimensions: " << loc.dimensions.x() << " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
-                //     cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
-                // }
-
             }
             else
             {
@@ -131,38 +90,49 @@ int TaskManager::executeTasks() {
             db->removeStoredBox(task->getBoxId());
 
         }
+        // Execute the task...
 
-
-        std::cout << "arrived at emit" << std::endl;
-        emit onTaskCompleted();
-
+        // After the task is completed, emit the taskExecutionCompleted signal
+        db->removeTaskFromQueue(executingQueue.front()->getId());
+        executingQueue.erase(executingQueue.begin());
+       emit taskCompleted();
     }
-    else {
-        std::cout << "All tasks executed." << std::endl;
-    }
-    return 0; // Placeholder return value
+
 }
 
-int TaskManager::onTaskCompleted() {
+void TaskManager::onTaskPrepared(std::shared_ptr<Task> task) {
+    executingQueue.push_back(task);
+     std::cout << "task preped and added to execute" << std::endl;
+    emit taskPrepared();
+}
 
-    db->removeTaskFromQueue(queue.front()->getId());
+void TaskManager::startExecutionLoop() {
+    while (!executingQueue.empty() || !donePreparing) {
+        if (!executingQueue.empty()) {
+            executeTasks();
+        } else if (!donePreparing) {
+            waitForTasks();
+        }
 
-    queue.erase(queue.begin());
+
+    }
+
+     std::cout << "DONE EXECUTING TASKS" << std::endl;
+}
+
+void TaskManager::waitForTasks() {
+    // Wait for the tasksPrepared signal to exit the function
+     std::cout << "waiting for TASKS" << std::endl;
+    QEventLoop loop;
+    connect(this, &::TaskManager::taskPrepared, &loop, &QEventLoop::quit);
+    loop.exec();
+    disconnect(this, &::TaskManager::taskPrepared, &loop, &QEventLoop::quit);
+}
+
+void TaskManager::onTaskCompleted() {
+     std::cout << "task done" << std::endl;
     emit refresh();
-    for (const auto& task : queue) {
-        std::cout << task->getId() << std::endl;
-    }
-
-    if (!queue.empty()) {
-
-        std::cout << "arrive new execture" << std::endl;
-        executeTasks();
-    }
-    else
-    {
-        std::cout << "UPDATE DATABASE - ALL TASKS DONE" << std::endl;
-    }
-    return 0; // Placeholder return value
+    taskExecuting = false;
 }
 
 int TaskManager::addBox(){

@@ -10,6 +10,7 @@
 //change
 
 using namespace sql;
+using namespace std;
 
 class Database : public QObject {
     Q_OBJECT

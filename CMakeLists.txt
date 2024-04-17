@@ -31,6 +31,8 @@ set(SOURCES
 add_executable(simulation ${SOURCES}
     TaskManager.cpp
     TaskManager.h
+    taskPreparer.h
+    taskPreparer.cpp
 
     )
 

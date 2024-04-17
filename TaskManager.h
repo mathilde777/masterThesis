@@ -3,6 +3,7 @@
 
 #include "database.h"
 #include <QObject>
+#include "qtimer.h"
 #include "task.h"
 #include <memory> // For std::shared_ptr
 //#include "/home/suleyman/Desktop/MasterThesis/library/lib/include/pcl_3d.h"
@@ -15,7 +16,7 @@ public:
     ~TaskManager();
     void addTask(int boxId, int trayId, int task);
     void trayDocked();
-    int executeTasks();
+   // int executeTasks();
     int addBox();
     int findBox();
     void update();
@@ -36,17 +37,40 @@ public:
     //Database db;
     int currentTaskIndex;
     bool preparingNextTask;
+    int taskToExecuteIndex;
+    void prepTask(int index);
+     QTimer* executionTimer;
 
- signals:
-     void taskCompleted();
-     void refresh();
-     void trayDockedUpdate();
-
- public slots:
-    int onTaskCompleted();
-    void prepNextTask();
+    std::vector<std::shared_ptr<Task>> executingQueue;
+    std::vector<std::shared_ptr<Task>> preparedQueue;
 
 
+    bool donePreparing;
+
+signals:
+    void trayDockedUpdate();
+    void taskPrepared();
+    void taskCompleted();
+    void refresh();
+    void taskExecutionCompleted();
+
+
+private slots:
+   // void prepFirstTask();
+    //void prepNextTask();
+   // void onTaskPrepared(std::shared_ptr<Task> task);
+    //int onTaskCompleted();
+   // void checkTasks();
+    void executeTasks();
+    void waitForTasks();
+    void startExecutionLoop();
+    void preparingDone();
+private:
+    bool taskExecuting;
+private slots:
+    // Add a slot to handle task completion
+    void onTaskCompleted();
+    void onTaskPrepared(std::shared_ptr<Task> task);
 
 };
 
