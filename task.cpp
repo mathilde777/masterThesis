@@ -21,6 +21,7 @@ int Task::getBoxId() const {
     return boxId;
 }
 
+
 // Setters
 void Task::setId(int taskId) {
     id = taskId;

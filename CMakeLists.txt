@@ -25,14 +25,19 @@ set(SOURCES
     task.cpp
     detection2D.h
     detection2D.cpp
-)
-
-# Add an executable target
-add_executable(simulation ${SOURCES}
     TaskManager.cpp
     TaskManager.h
     taskPreparer.h
     taskPreparer.cpp
+    findCases.cpp
+    findCases.h
+)
+
+# Add an executable target
+add_executable(simulation ${SOURCES}
+    photoProcessing.h
+
+
 
     )
 

@@ -2,7 +2,6 @@
 
 #include "detection2D.h"
 #include <iostream>
-#include <sstream>
 #include <cstdio>
 #include <cstring> // for strstr
 

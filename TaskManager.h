@@ -16,10 +16,6 @@ public:
     ~TaskManager();
     void addTask(int boxId, int trayId, int task);
     void trayDocked();
-   // int executeTasks();
-    int addBox();
-    int findBox();
-    void update();
     void prepTasks(int id);
     void getTasks(int trayId);
 
@@ -56,21 +52,15 @@ signals:
 
 
 private slots:
-   // void prepFirstTask();
-    //void prepNextTask();
-   // void onTaskPrepared(std::shared_ptr<Task> task);
-    //int onTaskCompleted();
-   // void checkTasks();
     void executeTasks();
     void waitForTasks();
     void startExecutionLoop();
     void preparingDone();
-private:
-    bool taskExecuting;
-private slots:
-    // Add a slot to handle task completion
     void onTaskCompleted();
     void onTaskPrepared(std::shared_ptr<Task> task);
+private:
+    bool taskExecuting;
+
 
 };
 

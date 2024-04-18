@@ -121,7 +121,6 @@ void TaskManager::startExecutionLoop() {
 }
 
 void TaskManager::waitForTasks() {
-    // Wait for the tasksPrepared signal to exit the function
      std::cout << "waiting for TASKS" << std::endl;
     QEventLoop loop;
     connect(this, &::TaskManager::taskPrepared, &loop, &QEventLoop::quit);
@@ -135,17 +134,3 @@ void TaskManager::onTaskCompleted() {
     taskExecuting = false;
 }
 
-int TaskManager::addBox(){
-    // Implementation for adding a box
-    return 0; // Placeholder return value
-}
-
-int TaskManager::findBox() {
-    // Implementation for finding a box
-    return 0; // Placeholder return value
-}
-
-void TaskManager::update()
-{
-
-}
