@@ -3,6 +3,7 @@
 #include "qtimer.h"
 #include "qtmetamacros.h"
 #include <iostream>
+#include "box.h"
 
 TaskPreparer::TaskPreparer(int trayId, std::shared_ptr<Database> db) : trayId(trayId) ,db(db){
      std::cout << "test6"<< std::endl;

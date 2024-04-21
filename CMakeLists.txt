@@ -11,6 +11,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)
+find_package(PCL 1.3 REQUIRED COMPONENTS common io filters visualization segmentation surface)
+
+
+include_directories(${PCL_INCLUDE_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+link_directories(${PCL_LIBRARY_DIRS})
+
+
+include_directories("/home/user/Documents/Thesis/library/lib/include")
 
 # Add your source files
 set(SOURCES
@@ -21,8 +30,8 @@ set(SOURCES
     database.h
     database.cpp
     addBox.cpp
-    task.h
-    task.cpp
+
+
     detection2D.h
     detection2D.cpp
     TaskManager.cpp
@@ -31,15 +40,17 @@ set(SOURCES
     taskPreparer.cpp
     findCases.cpp
     findCases.h
+
+    photoProcessing.h
+    3D_detection.cpp
+    result.h
+    box.h
+    task.h
+    3D_detection.h
 )
 
 # Add an executable target
-add_executable(simulation ${SOURCES}
-    photoProcessing.h
-
-
-
-    )
+add_executable(simulation ${SOURCES} )
 
 # Include MySQL Connector/C++ headers
 target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include)
@@ -52,4 +63,8 @@ find_package(CURL REQUIRED)
 target_include_directories(simulation PRIVATE ${CURL_INCLUDE_DIRS})
 
 # Link against Qt modules and MySQL Connector/C++
-target_link_libraries(simulation PRIVATE Qt6::Core Qt6::Widgets Qt6::Sql mysqlcppconn ${CURL_LIBRARIES})
+target_link_libraries(simulation PRIVATE Qt6::Core Qt6::Widgets Qt6::Sql
+    mysqlcppconn
+    ${CURL_LIBRARIES}
+    ${PCL_LIBRARIES}
+    /home/user/Documents/Thesis/library/lib/lib3DSystem.so)

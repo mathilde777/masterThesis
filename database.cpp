@@ -62,12 +62,15 @@ std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
             while (resultSet && resultSet->next()) {
-                auto newTask = std::make_shared<Task>(
-                    resultSet->getInt("id"),
-                    resultSet->getInt("task"),
-                    resultSet->getInt("boxId"),
-                    resultSet->getInt("trayId")
-                    );
+                int taskId = resultSet->getInt("id");
+                int taskType = resultSet->getInt("task");
+                int boxId = resultSet->getInt("boxId");
+                int taskTrayId = resultSet->getInt("trayId");
+
+
+                auto box = getBox(tray_id,boxId);
+                // Create Task object and associate Box
+                auto newTask = std::make_shared<Task>(taskId, taskType, boxId, tray_id, box);
                 tasks.push_back(newTask);
             }
         } while (pstmt->getMoreResults());
@@ -355,3 +358,108 @@ std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
     return storedBoxes;
 }
 
+std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
+    std::tuple<double, double, double> dimensions;
+
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetBoxDimensions(?)"));
+        pstmt->setInt(1, Id);
+        bool hasResults = pstmt->execute(); // Execute the stored procedure
+
+        if (hasResults) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+
+            if (resultSet && resultSet->next()) {
+
+                double width = resultSet->getDouble("width");
+                double height = resultSet->getDouble("height");
+                double length = resultSet->getDouble("length");
+                dimensions = std::make_tuple(width, height, length);
+            }
+        }
+
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return dimensions;
+}
+
+std::shared_ptr<Box> Database::getBox(int tray,int Id) {
+    std::shared_ptr<Box> box;
+
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetLastKnownLocation(?)"));
+        pstmt->setInt(1, Id);
+        bool hasResults = pstmt->execute(); // Execute the stored procedure
+
+        if (hasResults) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+
+            if (resultSet && resultSet->next()) {
+                int boxid = resultSet->getInt("boxid");
+                double last_x = resultSet->getDouble("lastX");
+                double last_y = resultSet->getDouble("lastY");
+                double last_z = resultSet->getDouble("lastZ");
+
+                // Retrieve box dimensions and last known location
+                // Assuming you have functions to retrieve these values from the database
+                double width, height, length;
+                std::tie(width, height, length) = getBoxDimensions(Id);
+                box = std::make_shared<Box>(Id, boxid, tray, last_x, last_y, last_z, width, height, length);
+            }
+        }
+
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return box;
+}
+
+std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
+    std::vector<std::shared_ptr<Box>> boxes;
+
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetAllBoxesInTray(?)"));
+        pstmt->setInt(1, trayId);
+        bool hasResults = pstmt->execute(); // Execute the stored procedure
+
+        if (hasResults) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+
+            while (resultSet && resultSet->next()) {
+                int id = resultSet->getInt("id");
+                int boxId = resultSet->getInt("boxid");
+                int trayId = resultSet->getInt("trayid");
+                double lastX = resultSet->getDouble("lastX");
+                double lastY = resultSet->getDouble("lastY");
+                double lastZ = resultSet->getDouble("lastZ");
+                double width = resultSet->getDouble("width");
+                double height = resultSet->getDouble("height");
+                double length = resultSet->getDouble("length");
+
+                // Create a new Box object with the retrieved information
+                auto box = std::make_shared<Box>(id, boxId, trayId, lastX, lastY, lastZ, width, height, length);
+                boxes.push_back(box);
+            }
+        }
+
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return boxes;
+}

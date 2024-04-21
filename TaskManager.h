@@ -42,6 +42,7 @@ public:
 
 
     bool donePreparing;
+    int run3DDetectionThread();
 
 signals:
     void trayDockedUpdate();

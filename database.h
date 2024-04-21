@@ -38,6 +38,10 @@ public:
     std::vector<int> getUnstoredBoxes();
    std::vector<std::pair<int, std::string>>  getStoredBoxes();
     std::vector<std::pair<int, std::string>> getKnownBoxes();
+   std::vector<std::shared_ptr<Box>> getAllBoxesInTray(int trayId) ;
+    std::shared_ptr<Box> getBox(int tray, int boxId);
+   std::tuple<double, double, double> getBoxDimensions(int boxId);
+
 
 public slots:
     void storeBox(int id, int tray);

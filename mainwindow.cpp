@@ -182,7 +182,7 @@ void MainWindow::addButtonClicked()
 
         if (tray.toInt() == dockedTray && tray.toInt() == 0)
         {
-            Task task = Task(0, 1, id, dockedTray); // Assuming 0 is the task type for adding
+
             db->addTask(id, 1, dockedTray);
         }
         else

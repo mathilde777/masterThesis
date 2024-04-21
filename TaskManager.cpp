@@ -7,6 +7,10 @@
 #include "taskPreparer.h"
 #include <QTimer>
 #include <memory>
+#include "3D_detection.h"
+#include "result.h"
+#include <future>
+
 
 TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
@@ -16,7 +20,7 @@ TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
   //  connect(executionTimer, &QTimer::timeout, this, &TaskManager::checkTasks);
     executionTimer->start(1000); // Adjust timeout interval as needed
     taskExecuting = false;
-    donePreparing =false;
+    donePreparing = false;
 }
 
 
@@ -72,22 +76,24 @@ void TaskManager::executeTasks() {
         }
         else if(task->getType()==0)
         {
-            if(db->checkExistingBoxes(task->getTray(), task->getBoxId()))
-            {
-                //hre we starts 2 threads
-                // decide how to cmomprae;
-                std::cout << "RUN 2D imageing" << std::endl;
-                //std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
-                // std::cout << result->label << std::endl;
+            if (db->checkExistingBoxes(task->getTray(), task->getBoxId())) {
                 std::cout << "RUN 3D imaging" << std::endl;
-            }
-            else
-            {
+            } else {
                 std::cout << "RUN 3D imaging" << std::endl;
             }
 
-            std::cout << "task completed time to remove stored box"<< task->getBoxId()  << std::endl;
+            std::cout << "task completed time to remove stored box" << task->getBoxId() << std::endl;
             db->removeStoredBox(task->getBoxId());
+
+            // Asynchronously execute run3DDetectionThread using a lambda function
+            std::future<int> futureResult = std::async(std::launch::async, [this]() {
+                return this->run3DDetectionThread();
+            });
+
+            // Do other tasks while waiting for the result...
+
+            // Get the result when it's available
+            int result3D = futureResult.get();
 
         }
         // Execute the task...
@@ -95,8 +101,13 @@ void TaskManager::executeTasks() {
         // After the task is completed, emit the taskExecutionCompleted signal
         db->removeTaskFromQueue(executingQueue.front()->getId());
         executingQueue.erase(executingQueue.begin());
-       emit taskCompleted();
+        emit taskCompleted();
     }
+
+}
+int TaskManager::run3DDetectionThread() {
+
+    auto result = run3DDetection(); // Assuming run3DDetection returns a Result
 
 }
 
@@ -113,10 +124,7 @@ void TaskManager::startExecutionLoop() {
         } else if (!donePreparing) {
             waitForTasks();
         }
-
-
     }
-
      std::cout << "DONE EXECUTING TASKS" << std::endl;
 }
 
