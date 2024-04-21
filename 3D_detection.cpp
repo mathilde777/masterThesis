@@ -35,31 +35,39 @@ int run3DDetection() {
 
 
 
-void matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, std::shared_ptr<Box>& boxes) {
-    std::vector<ClusterInfo> matches;
+std::shared_ptr<std::vector<ClusterInfo>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, std::shared_ptr<Box>& boxes) {
+    std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches;
     for (const auto& cluster : *clusters) {
-        for (const auto& box : boxes) {
+
             // Check if the dimensions are approximately equal with some tolerance
             double tolerance = 0.4; // Adjust as needed using trhe slider
-            if (std::abs(box->width - cluster.dimensions.x()) < tolerance &&
-                std::abs(box->height - cluster.dimensions.y()) < tolerance &&
-                std::abs(box->length - cluster.dimensions.z()) < tolerance) {
-                // Match found
+            if (std::abs(boxes->width - cluster.dimensions.x()) < tolerance &&
+                std::abs(boxes->height - cluster.dimensions.y()) < tolerance &&
+                std::abs(boxes->length - cluster.dimensions.z()) < tolerance) {
 
-                matches.push_back(cluster);
+                double distance = std::sqrt(std::pow(boxes->last_x - cluster.centroid.x(), 2) +
+                                            std::pow(boxes->last_y - cluster.centroid.y(), 2) +
+                                            std::pow(boxes->last_z - cluster.centroid.z(), 2));
+                matches->emplace_back(cluster, distance);
 
             }
-        }
+
     }
-        if(matches.size() == 1)
+    if(matches->size() == 1)
         {
             std::cout << "Match found: Cluster ID " << matches.front().clusterId << " matches with Box ID " << boxes->getId() < std::endl;
         }
-        else if( matches.size() > 1)
+    else if( matches->size() > 1)
 
         {
 
         }
+        else if(matches->size() > 1)
+
+        {
+            return matches;
+        }
+
 }
 
 
