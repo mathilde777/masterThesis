@@ -15,8 +15,6 @@ int run3DDetection() {
     Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
     float height = 10.0f; // Example height
 
-
-
     // Calibrate tray
     Eigen::Vector3f calibratedPoint = pcl3d.calibrateTray(trayFilePath, height);
 
@@ -27,7 +25,6 @@ int run3DDetection() {
     // Find bounding box
     std::shared_ptr<std::vector<ClusterInfo>> boundingBoxInfo = std::make_shared<std::vector<ClusterInfo>>(pcl3d.findBoundingBox(boxFilePath, trayFilePath, referencePoint, prevLocation));
 
-
     return 1;
 
 }
@@ -35,39 +32,96 @@ int run3DDetection() {
 
 
 
-std::shared_ptr<std::vector<ClusterInfo>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, std::shared_ptr<Box>& boxes) {
+std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, std::shared_ptr<Box>& box) {
     std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches;
-    for (const auto& cluster : *clusters) {
+    double tolerance = 0.4; // Adjust as needed using trhe slider
+    std::vector<std::tuple<double, double, double>> dimensionPairs = {
+        {box->width, box->height, box->length},
+        {box->width, box->length, box->height},
+        {box->height, box->width, box->length},
+        {box->height, box->length, box->width},
+        {box->length, box->width, box->height},
+        {box->length, box->height, box->width}
+    };
+    for (const auto& cluster : *clusters) { 
+            for (const auto& dimensions : dimensionPairs) {
+                double widthDiff = std::abs(std::get<0>(dimensions) - cluster.dimensions.x());
+                double heightDiff = std::abs(std::get<1>(dimensions) - cluster.dimensions.y());
+                double lengthDiff = std::abs(std::get<2>(dimensions) - cluster.dimensions.z());
 
-            // Check if the dimensions are approximately equal with some tolerance
-            double tolerance = 0.4; // Adjust as needed using trhe slider
-            if (std::abs(boxes->width - cluster.dimensions.x()) < tolerance &&
-                std::abs(boxes->height - cluster.dimensions.y()) < tolerance &&
-                std::abs(boxes->length - cluster.dimensions.z()) < tolerance) {
 
-                double distance = std::sqrt(std::pow(boxes->last_x - cluster.centroid.x(), 2) +
-                                            std::pow(boxes->last_y - cluster.centroid.y(), 2) +
-                                            std::pow(boxes->last_z - cluster.centroid.z(), 2));
+                if (widthDiff < tolerance && heightDiff < tolerance && lengthDiff < tolerance) {
+                double distance = std::sqrt(std::pow(box->last_x - cluster.centroid.x(), 2) +
+                                            std::pow(box->last_y - cluster.centroid.y(), 2) +
+                                            std::pow(box->last_z - cluster.centroid.z(), 2));
                 matches->emplace_back(cluster, distance);
-
             }
-
     }
-    if(matches->size() == 1)
-        {
-            std::cout << "Match found: Cluster ID " << matches.front().clusterId << " matches with Box ID " << boxes->getId() < std::endl;
-        }
-    else if( matches->size() > 1)
+    }
 
+        if(matches->size() == 1)
         {
-
+        std::cout << "Match found: Cluster ID " << matches->front().first.clusterId << " matches with Box ID " << box->getId() << std::endl;
         }
-        else if(matches->size() > 1)
+        else if( matches->size() > 1)
 
         {
-            return matches;
+        std::sort(matches->begin(), matches->end(), [](const auto& a, const auto& b) {
+            return a.second < b.second;
+        });
+        }
+        else if(matches->size() <0 )
+        {
+           std::cout << "No Match found: Cluster ID " << std::endl;
         }
 
+}
+
+
+
+void updateBoxLocations(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, std::vector<std::shared_ptr<Box>>& boxes) {
+    double tolerance = 0.4;
+    for (const auto& cluster : *clusters) {
+        std::shared_ptr<Box> bestMatch;
+        double bestDifference = std::numeric_limits<double>::max();
+
+        for (const auto& box : boxes) {
+            // Check all combinations of box dimensions against cluster dimensions
+            std::vector<std::tuple<double, double, double>> dimensionPairs = {
+                {box->width, box->height, box->length},
+                {box->width, box->length, box->height},
+                {box->height, box->width, box->length},
+                {box->height, box->length, box->width},
+                {box->length, box->width, box->height},
+                {box->length, box->height, box->width}
+            };
+
+            for (const auto& dimensions : dimensionPairs) {
+                double widthDiff = std::abs(std::get<0>(dimensions) - cluster.dimensions.x());
+                double heightDiff = std::abs(std::get<1>(dimensions) - cluster.dimensions.y());
+                double lengthDiff = std::abs(std::get<2>(dimensions) - cluster.dimensions.z());
+
+                if (widthDiff < tolerance && heightDiff < tolerance && lengthDiff < tolerance) {
+                    double totalDifference = widthDiff + heightDiff + lengthDiff;
+
+                    // Update the best match if the total difference is smaller
+                    if (totalDifference < bestDifference) {
+                        bestDifference = totalDifference;
+                        bestMatch = box;
+                    }
+                }
+            }
+        }
+
+        if (bestMatch) {
+            bestMatch->last_x = cluster.centroid.x();
+            bestMatch->last_y = cluster.centroid.y();
+            bestMatch->last_z = cluster.centroid.z();
+            std::cout << "Box ID " << bestMatch->id << " updated location to (" << bestMatch->last_x << ", " << bestMatch->last_y << ", " << bestMatch->last_z << ")" << std::endl;
+        } else {
+            std::cout << "Error: No matching box found for Cluster ID " << cluster.clusterId << std::endl;
+        }
+    }
 }
 
 

@@ -142,3 +142,7 @@ void TaskManager::onTaskCompleted() {
     taskExecuting = false;
 }
 
+void TaskManager::updateTray(int id)
+{
+
+}
