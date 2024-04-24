@@ -176,30 +176,39 @@ void Database::removeStoredBox(int boxId) {
 
 
 // Execute MySQL stored procedure to get information about a box
-void Database::getBoxInfo(int boxId) {
+std::tuple<int, double, double, double, double, double, double> Database::getBoxInfo(int Id) {
+    std::tuple<int, double, double, double, double, double, double> boxInfo;
+
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetBoxInfo(?)"));
-        pstmt->setInt(1, boxId);
+        pstmt->setInt(1, Id);
         bool hasResults = pstmt->execute();
 
         if (hasResults) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
-            while (resultSet && resultSet->next()) {
-                std::cout << "Box ID: " << resultSet->getInt("id") << std::endl;
-                // Additional fields printed as before
+
+            if (resultSet && resultSet->next()) {
+                int boxId = resultSet->getInt(1);
+                double width = resultSet->getDouble(2);
+                double height = resultSet->getDouble(3);
+                double length = resultSet->getDouble(4);
+                double last_x = resultSet->getDouble(5);
+                double last_y = resultSet->getDouble(6);
+                double last_z = resultSet->getDouble(7);
+                boxInfo = std::make_tuple(boxId, width, height, length, last_x, last_y, last_z);
             }
         }
 
-        // Consume any additional unexpected result sets
+        // Consume any additional result sets to avoid "Commands out of sync" error
         while (pstmt->getMoreResults()) {
             std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
-            // No processing needed, just consuming to comply with protocol
         }
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
-}
 
+    return boxInfo;
+}
 
 // Execute MySQL stored procedure to check if a box with the same dimensions exists
 bool Database::checkExistingBoxes(int tray_id, int box_id) {
@@ -369,7 +378,6 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
 
             if (resultSet && resultSet->next()) {
-
                 double width = resultSet->getDouble("width");
                 double height = resultSet->getDouble("height");
                 double length = resultSet->getDouble("length");
@@ -388,42 +396,27 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
     return dimensions;
 }
 
+
 std::shared_ptr<Box> Database::getBox(int tray, int Id) {
     std::shared_ptr<Box> box;
 
     try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetLastKnownLocation(?)"));
-        pstmt->setInt(1, Id);
-        bool hasResults = pstmt->execute();
+        auto boxInfo = getBoxInfo(Id);
+        int boxId = std::get<0>(boxInfo);
+        double width = std::get<1>(boxInfo);
+        double height = std::get<2>(boxInfo);
+        double length = std::get<3>(boxInfo);
+        double last_x = std::get<4>(boxInfo);
+        double last_y = std::get<5>(boxInfo);
+        double last_z = std::get<6>(boxInfo);
 
-        if (hasResults) {
-            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
-
-            if (resultSet && resultSet->next()) {
-                int boxid = resultSet->getInt("boxid");
-                double last_x = resultSet->getDouble("lastX");
-                double last_y = resultSet->getDouble("lastY");
-                double last_z = resultSet->getDouble("lastZ");
-
-                // Retrieve box dimensions and last known location
-                // Assuming you have functions to retrieve these values from the database
-                double width, height, length;
-                std::tie(width, height, length) = getBoxDimensions(Id);
-                box = std::make_shared<Box>(Id, boxid, tray, last_x, last_y, last_z, width, height, length);
-            }
-        }
-
-        // Consume any additional result sets to avoid "Commands out of sync" error
-        while (pstmt->getMoreResults()) {
-            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
-        }
+        box = std::make_shared<Box>(Id, boxId, tray, last_x, last_y, last_z, width, height, length);
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 
     return box;
 }
-
 
 std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
     std::vector<std::shared_ptr<Box>> boxes;

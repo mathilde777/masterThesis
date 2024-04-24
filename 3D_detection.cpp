@@ -30,8 +30,9 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection() {
 
 
 std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, const std::shared_ptr<Box>& box) {
-    std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches;
-    double tolerance = 0.4; // Adjust as needed using trhe slider
+    std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches = std::make_shared<std::vector<std::pair<ClusterInfo, double>>>();
+    double tolerance = 0.4; // Adjust as needed using the slider
+
     std::vector<std::tuple<double, double, double>> dimensionPairs = {
         {box->width, box->height, box->length},
         {box->width, box->length, box->height},
@@ -58,7 +59,7 @@ std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox
 
         if(matches->size() == 1)
         {
-        std::cout << "Match found: Cluster ID " << matches->front().first.clusterId << " matches with Box ID " << box->getId() << std::endl;
+        std::cout << "Match found: Cluster ID " << std::endl; //<< matches->front().first.clusterId << " matches with Box ID " << box->getId() << std::endl;
         }
         else if( matches->size() > 1)
 

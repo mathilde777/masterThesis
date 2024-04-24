@@ -88,8 +88,15 @@ void TaskManager::executeTasks() {
                 std::cout << "RUN 3D imaging" << std::endl;
 
                std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection();
-               std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results = matchClusterWithBox(resultsCluster, task->getBox());
-               if(results->size() > 1)
+                std::cout << "back in task manager" << std::endl;
+                std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results = matchClusterWithBox(resultsCluster, task->getBox());
+                std::shared_ptr<std::vector<DetectionResult>> result2D = run2D("test3.jpeg");
+                for( const auto res : *result2D)
+                {
+                    std::cout << "2D Boxx" << res.label << std::endl;
+                }
+
+                if(results->size() > 1)
                 {
                     //check with 2 D
                    std::shared_ptr<std::vector<DetectionResult>> result2D = run2D("test3.jpeg");
