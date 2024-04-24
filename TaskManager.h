@@ -1,6 +1,7 @@
 #ifndef TASKMANAGER_H
 #define TASKMANAGER_H
 
+#include "clusters.h"
 #include "database.h"
 #include <QObject>
 #include "qtimer.h"
@@ -48,6 +49,7 @@ public:
 
     void findBoxesOfSameSize(const Box& box1);
     void update(int trayId);
+    bool dimensionsMatch(const ClusterInfo& cluster, const Box& box)
 signals:
     void trayDockedUpdate();
     void taskPrepared();

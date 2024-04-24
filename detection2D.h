@@ -8,8 +8,11 @@
 
 struct DetectionResult {
     std::string label;
+    std::string dimensions;
+    std::pair<int, int> center;
     std::vector<int> points;
 };
+
 
 std::unique_ptr<DetectionResult> run2D(const char* file_path);
 std::string getBuffer(const char* file_path);

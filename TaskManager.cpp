@@ -169,14 +169,11 @@ void TaskManager::onTaskCompleted() {
 
 void TaskManager::update(int id)
 {
-    //list 3d
-    //list 2d
-    // list of boxes
 
-    //comapres of the legnths of lists
-    //if lagrger probelm
-    //if smaller -> should be ok
-
+    std::vector<std::pair<ClusterInfo, std::vector<int>>> matches;
+    std::unordered_map<std::shared_ptr<ClusterInfo>, std::vector<int>> clusterToBoxes;
+    std::unordered_map<int, std::vector<std::shared_ptr<ClusterInfo>>> boxToClusters;
+    //THREADS
 
     //get lists
     std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection();
@@ -185,8 +182,86 @@ void TaskManager::update(int id)
     //here run 2D.
 
 
+
+    //list 3d
+    //list 2d
+    // list of boxes
+
+    //comapres of the legnths of lists
+    //if lagrger probelm
+    //if smaller -> should be ok
+    for (const auto& cluster : *resultsCluster) {
+        std::vector<int> matchedBoxIds;
+        for (const auto& box : trayBoxes) {
+            if (dimensionsMatch(cluster, *box)) {
+                matchedBoxIds.push_back(box->id);
+            }
+        }
+        matches.push_back(std::make_pair(cluster, matchedBoxIds));
+    }
+    // so now we have a list of matches with the 3d
+    for (const auto& [cluster, matchedBoxes] : clusterToBoxes) {
+        std::cout << "Cluster ID: " << cluster->clusterId << std::endl;
+        if (matchedBoxes.size() > 1) {
+            std::cout << "Multiple box IDs: ";
+            for (int id : matchedBoxes) {
+                std::cout << id << " ";
+            }
+            std::cout << std::endl;
+        } else if (matchedBoxes.empty()) {
+            std::cout << "No matching boxes found" << std::endl;
+        }
+    }
+
+    for (const auto& [boxId, matchedClusters] : boxToClusters) {
+        std::cout << "Box ID: " << boxId << std::endl;
+        if (matchedClusters.size() > 1) {
+            std::cout << "Belongs to multiple clusters: ";
+            for (const auto& cluster : matchedClusters) {
+                std::cout << cluster->clusterId << " ";
+            }
+            std::cout << std::endl;
+        } else if (matchedClusters.empty()) {
+            std::cout << "Not assigned to any cluster" << std::endl;
+        }
+    }
+
+
+
+
+
+
 }
 
+
+bool TaskManager::dimensionsMatch(const ClusterInfo& cluster, const Box& box1) {
+    // Define a threshold for matching dimensions
+    float threshold = 0.1; // Adjust as needed
+    std::vector<std::tuple<double, double, double>> dimensionPairs = {
+        {box1.width, box1.height, box1.length},
+        {box1.width, box1.length, box1.height},
+        {box1.height, box1.width, box1.length},
+        {box1.height, box1.length, box1.width},
+        {box1.length, box1.width, box1.height},
+        {box1.length, box1.height, box1.width}
+    };
+    bool widthMatch = false;
+    bool heightMatch = false;
+    bool lengthMatch = false;
+    bool match = false;
+    for (const auto& dim1 : dimensionPairs) {
+        widthMatch = std::abs(cluster.dimensions.x() - std::get<0>(dim1)) < threshold;
+        heightMatch = std::abs(cluster.dimensions.z() - std::get<1>(dim1)) < threshold;
+        lengthMatch = std::abs(cluster.dimensions.y() - std::get<2>(dim1)) < threshold;
+        if(widthMatch && lengthMatch && heightMatch)
+        {
+            match = true;
+            break;
+        }
+    }
+
+    return match;
+}
 void TaskManager::findBoxesOfSameSize(const Box& box1)
 
 {
