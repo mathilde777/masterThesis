@@ -69,8 +69,10 @@ void TaskManager::executeTasks() {
 
     if ( !taskExecuting) {
         auto task = executingQueue.front();
+         std::cout << "crash?" << std::endl;
         findBoxesOfSameSize(*task->getBox());
         taskExecuting = true;
+         std::cout << "crash?" << std::endl;
         if (task->getType() == 1) {
             std::cout << "adding box" << std::endl;
             db->storeBox(task->getBoxId(), task->getTray());
@@ -80,6 +82,7 @@ void TaskManager::executeTasks() {
         }
         else if(task->getType()==0)
         {
+             std::cout << "finding box" << std::endl;
             if (!possibleSameSize.empty()) {
                 //here is when there could be possible of 2 smae size...... not certain depending on the rorentaiton in the iamges
                 std::cout << "RUN 3D imaging" << std::endl;
@@ -89,7 +92,11 @@ void TaskManager::executeTasks() {
                if(results->size() > 1)
                 {
                     //check with 2 D
-                   std::unique_ptr<DetectionResult> result2D = run2D("file path");
+                   std::shared_ptr<std::vector<DetectionResult>> result2D = run2D("test3.jpeg");
+                    for( const auto res : *result2D)
+                   {
+                       std::cout << "2D Boxx" << res.label << std::endl;
+                   }
 
                 }
 
@@ -143,8 +150,10 @@ void TaskManager::onTaskPrepared(std::shared_ptr<Task> task) {
 }
 
 void TaskManager::startExecutionLoop() {
+      std::cout << "huh?" << std::endl;
     while (!executingQueue.empty() || !donePreparing) {
         if (!executingQueue.empty()) {
+              std::cout << "huh2" << std::endl;
             executeTasks();
         } else if (!donePreparing) {
             waitForTasks();
@@ -176,17 +185,19 @@ void TaskManager::update(int id)
     //THREADS
 
     //get lists
-    std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection();
+   // std::thread t1(run3DDetection(), "Hello");
+   // std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection();
 
+    std::future<std::shared_ptr<std::vector<ClusterInfo>> > ret = std::async(run3DDetection);
+    std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = ret.get();
 
-    //here run 2D.
-
-
+     //here run 2D thread
+    std::future<std::shared_ptr<std::vector<DetectionResult>> > ret2 = std::async(run2D,"test4.jpeg");
+    std::shared_ptr<std::vector<DetectionResult>> result2D = ret2.get();
 
     //list 3d
     //list 2d
     // list of boxes
-
     //comapres of the legnths of lists
     //if lagrger probelm
     //if smaller -> should be ok
@@ -225,12 +236,6 @@ void TaskManager::update(int id)
             std::cout << "Not assigned to any cluster" << std::endl;
         }
     }
-
-
-
-
-
-
 }
 
 
@@ -263,8 +268,9 @@ bool TaskManager::dimensionsMatch(const ClusterInfo& cluster, const Box& box1) {
     return match;
 }
 void TaskManager::findBoxesOfSameSize(const Box& box1)
-
 {
+
+
     std::vector<std::tuple<double, double, double>> dimensionPairs1 = {
         {box1.width, box1.height, box1.length},
         {box1.width, box1.length, box1.height},
@@ -282,9 +288,6 @@ void TaskManager::findBoxesOfSameSize(const Box& box1)
                 {box->length, box->width, box->height},
                 {box->length, box->height, box->width}
             };
-
-
-
             bool foundMatch = false;
             if(box->boxId == box1.getBoxId())
             {
@@ -300,12 +303,10 @@ void TaskManager::findBoxesOfSameSize(const Box& box1)
                 }
                 if (foundMatch) break;
             }
-
             }
-            if (foundMatch) {
+            if (foundMatch){
                 possibleSameSize.push_back(box);
             }
         }
-
 
 }

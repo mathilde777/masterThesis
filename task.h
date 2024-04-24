@@ -17,8 +17,8 @@ public:
     std::shared_ptr<Box> box;
 
 
-    Task(int id, int task_type, int boxId, int trayId, std::shared_ptr<Box> box)
-        : id(id), task_type(task_type), boxId(boxId), trayId(trayId), box(box) {}
+    Task(int id, int task_type, int boxId, int trayId)
+        : id(id), task_type(task_type), boxId(boxId), trayId(trayId) {}
 
     // Getters
     int getId() const { return id; }

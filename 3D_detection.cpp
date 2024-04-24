@@ -9,23 +9,20 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection() {
     PCL_3D pcl3d;
 
     // Example file paths and vectors for reference
-    std::string boxFilePath = "path/to/box.ply";
-    std::string trayFilePath = "path/to/tray.ply";
-    Eigen::Vector3f referencePoint(0.0f, 0.0f, 0.0f); // Example reference point
+    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/3box_center.ply";
+    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
+    auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
     Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
     float height = 10.0f; // Example height
-
-    // Calibrate tray
-    Eigen::Vector3f calibratedPoint = pcl3d.calibrateTray(trayFilePath, height);
-
-    // Transform point cloud
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>()); // Example point cloud
-    pcl::PointCloud<pcl::PointXYZ>::Ptr transformedCloud = pcl3d.transformToReferencePoint(cloud, calibratedPoint);
-
-    // Find bounding box
-    std::shared_ptr<std::vector<ClusterInfo>> boundingBoxInfo = std::make_shared<std::vector<ClusterInfo>>(pcl3d.findBoundingBox(boxFilePath, trayFilePath, referencePoint, prevLocation));
-
-    return boundingBoxInfo;
+    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath, trayFilePath,refPoint);
+    for (auto loc : boundingBoxInfo)
+    {
+        cout << "Cluster ID: " << loc.clusterId << endl;
+        cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
+        cout << "Dimensions: " << loc.dimensions.x() << " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
+        cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
+    }
+    return std::make_shared<std::vector<ClusterInfo>>(boundingBoxInfo);
 
 }
 

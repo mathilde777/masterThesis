@@ -8,15 +8,13 @@
 
 struct DetectionResult {
     std::string label;
-    std::string dimensions;
-    std::pair<int, int> center;
-    std::vector<int> points;
+    std::pair<double, double> dimensions;
+    std::pair<double, double> center;
+
 };
-
-
-std::unique_ptr<DetectionResult> run2D(const char* file_path);
+std::shared_ptr<std::vector<DetectionResult>> run2D(const char* file_path);
 std::string getBuffer(const char* file_path);
-DetectionResult getLabel(const std::string& buffer);
+std::vector<DetectionResult> getLabels(const std::string& buffer);
 
 #endif // DETECTION2D_H
 

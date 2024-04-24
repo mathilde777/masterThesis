@@ -3,12 +3,13 @@
 #include "detection2D.h"
 #include <iostream>
 #include <cstdio>
-#include <cstring> // for strstr
+#include <cstring>
+#include <sstream>
 
-std::unique_ptr<DetectionResult> run2D(const char* file_path) {
+std::shared_ptr<std::vector<DetectionResult>> run2D(const char* file_path) {
     std::string buffer = getBuffer(file_path);
-    DetectionResult result = getLabel(buffer);
-    return std::make_unique<DetectionResult>(result);
+    std::vector<DetectionResult> result = getLabels(buffer);
+    return std::make_shared<std::vector<DetectionResult>>(result);
 }
 
 std::string getBuffer(const char* file_path) {
@@ -32,53 +33,40 @@ std::string getBuffer(const char* file_path) {
     return buffer;
 }
 
-DetectionResult getLabel(const std::string& buffer) {
+std::vector<DetectionResult> getLabels(const std::string& buffer) {
+    std::vector<DetectionResult> results;
 
-    DetectionResult result;
+    // Find the position of "box" in the buffer
+    size_t pos = 0;
+    while ((pos = buffer.find("\"box\"", pos)) != std::string::npos) {
+        // Extract the relevant information for each detection result
+        DetectionResult result;
 
-    // Find the position of "label" in the buffer
-    size_t labelPos = buffer.find("label");
-    if (labelPos != std::string::npos) {
+        // Parse dimensions
+        size_t dim_start = buffer.find("[", pos);
+        size_t dim_end = buffer.find("]", dim_start);
+        std::string dim_str = buffer.substr(dim_start + 1, dim_end - dim_start - 1);
+        sscanf(dim_str.c_str(), "%lf,%lf", &result.dimensions.first, &result.dimensions.second);
 
-        size_t quotePos = buffer.find("\"", labelPos + 7);
-        if (quotePos != std::string::npos) {
-            result.label = buffer.substr(quotePos + 1, buffer.find("\"", quotePos + 1) - quotePos - 1);
-            std::cout << "Label: " << result.label << std::endl;
-            size_t labelNumPos = result.label.find_last_of("0123456789");
-            if (labelNumPos != std::string::npos) {
-                result.label = result.label.substr(labelNumPos);
-            }
-        }
+        // Parse center
+        size_t center_start = buffer.find("[", dim_end);
+        size_t center_end = buffer.find("]", center_start);
+        std::string center_str = buffer.substr(center_start + 1, center_end - center_start - 1);
+        sscanf(center_str.c_str(), "%lf,%lf", &result.center.first, &result.center.second);
+
+        // Extract label
+        size_t label_start = buffer.find("\"label\"", center_end);
+        size_t label_quote_start = buffer.find("\"", label_start + 7);
+        size_t label_quote_end = buffer.find("\"", label_quote_start + 1);
+        result.label = buffer.substr(label_quote_start + 1, label_quote_end - label_quote_start - 1);
+
+        // Add the DetectionResult to the results vector
+        results.push_back(result);
+
+        // Move to the next detection result
+        pos = label_quote_end;
     }
 
-    // Find the position of "dimensions" in the buffer
-    size_t dimPos = buffer.find("dimensions");
-    if (dimPos != std::string::npos) {
-
-        size_t quotePos = buffer.find("\"", dimPos + 13);
-        if (quotePos != std::string::npos) {
-
-            result.dimensions = buffer.substr(quotePos + 1, buffer.find("\"", quotePos + 1) - quotePos - 1);
-            std::cout << "Dimensions: " << result.dimensions << std::endl;
-        }
-    }
-
-    // Find the position of "center" in the buffer
-    size_t centerPos = buffer.find("center");
-    if (centerPos != std::string::npos) {
-        size_t bracketPos = buffer.find("[", centerPos + 8);
-        if (bracketPos != std::string::npos) {
-            size_t commaPos = buffer.find(",", bracketPos + 1);
-            if (commaPos != std::string::npos) {
-                result.center.first = std::stoi(buffer.substr(bracketPos + 1, commaPos - bracketPos - 1));
-                size_t endBracketPos = buffer.find("]", commaPos + 1);
-                if (endBracketPos != std::string::npos) {
-                    result.center.second = std::stoi(buffer.substr(commaPos + 1, endBracketPos - commaPos - 1));
-                    std::cout << "Center: (" << result.center.first << ", " << result.center.second << ")" << std::endl;
-                }
-            }
-        }
-    }
-    return result;
+    return results;
 }
 

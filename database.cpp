@@ -67,18 +67,17 @@ std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
                 int boxId = resultSet->getInt("boxId");
                 int taskTrayId = resultSet->getInt("trayId");
 
-
-                auto box = getBox(tray_id,boxId);
-                // Create Task object and associate Box
-                auto newTask = std::make_shared<Task>(taskId, taskType, boxId, tray_id, box);
-                tasks.push_back(newTask);
+                // Store task information in a temporary object
+                tasks.emplace_back(std::make_shared<Task>(taskId, taskType, boxId, tray_id));
             }
-        } while (pstmt->getMoreResults());
+        } while (pstmt->getMoreResults()); // Consume additional result sets
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
     return tasks;
 }
+
+
 
 
 
@@ -389,13 +388,13 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
     return dimensions;
 }
 
-std::shared_ptr<Box> Database::getBox(int tray,int Id) {
+std::shared_ptr<Box> Database::getBox(int tray, int Id) {
     std::shared_ptr<Box> box;
 
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetLastKnownLocation(?)"));
         pstmt->setInt(1, Id);
-        bool hasResults = pstmt->execute(); // Execute the stored procedure
+        bool hasResults = pstmt->execute();
 
         if (hasResults) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
@@ -424,6 +423,7 @@ std::shared_ptr<Box> Database::getBox(int tray,int Id) {
 
     return box;
 }
+
 
 std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
     std::vector<std::shared_ptr<Box>> boxes;
@@ -463,3 +463,4 @@ std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
 
     return boxes;
 }
+
