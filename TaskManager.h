@@ -43,7 +43,11 @@ public:
 
     bool donePreparing;
     int run3DDetectionThread();
+    std::vector<std::shared_ptr<Box>> trayBoxes;
+     std::vector<std::shared_ptr<Box>> possibleSameSize;
 
+    void findBoxesOfSameSize(const Box& box1);
+    void update(int trayId);
 signals:
     void trayDockedUpdate();
     void taskPrepared();

@@ -5,7 +5,7 @@
 #include "3D_detection.h"
 #include <cmath> // For std::abs
 //std::shared_ptr<std::vector<ClusterInfo>>
-int run3DDetection() {
+std::shared_ptr<std::vector<ClusterInfo>> run3DDetection() {
     PCL_3D pcl3d;
 
     // Example file paths and vectors for reference
@@ -25,14 +25,14 @@ int run3DDetection() {
     // Find bounding box
     std::shared_ptr<std::vector<ClusterInfo>> boundingBoxInfo = std::make_shared<std::vector<ClusterInfo>>(pcl3d.findBoundingBox(boxFilePath, trayFilePath, referencePoint, prevLocation));
 
-    return 1;
+    return boundingBoxInfo;
 
 }
 
 
 
 
-std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, std::shared_ptr<Box>& box) {
+std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, const std::shared_ptr<Box>& box) {
     std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches;
     double tolerance = 0.4; // Adjust as needed using trhe slider
     std::vector<std::tuple<double, double, double>> dimensionPairs = {
@@ -70,16 +70,18 @@ std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox
             return a.second < b.second;
         });
         }
-        else if(matches->size() <0 )
+        else if(matches->size() <= 0 )
         {
            std::cout << "No Match found: Cluster ID " << std::endl;
         }
 
+
+        return matches;
 }
 
 
 
-void updateBoxLocations(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, std::vector<std::shared_ptr<Box>>& boxes) {
+void updateBoxLocations(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, const std::vector<std::shared_ptr<Box>>& boxes) {
     double tolerance = 0.4;
     for (const auto& cluster : *clusters) {
         std::shared_ptr<Box> bestMatch;

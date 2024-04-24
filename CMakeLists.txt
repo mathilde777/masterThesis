@@ -50,7 +50,8 @@ set(SOURCES
 )
 
 # Add an executable target
-add_executable(simulation ${SOURCES} )
+add_executable(simulation ${SOURCES}
+    matchingLogic.cpp )
 
 # Include MySQL Connector/C++ headers
 target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include)
