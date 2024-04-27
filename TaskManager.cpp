@@ -82,8 +82,11 @@ void TaskManager::executeTasks() {
 
              Eigen::Vector3f lastPosititon;
                 lastPosititon << task->getBox()->getLastX(),task->getBox()->getLastY(), task->getBox()->getLastZ();
+             Eigen::Vector3f dimensions;
+             lastPosititon << task->getBox()->getWidth(),task->getBox()->getLength(), task->getBox()->getWidth();
+
              std::cout << "Last position: " << lastPosititon << std::endl;
-             std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection(lastPosititon);
+             std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection(lastPosititon, dimensions);
                 std::cout << "back in task manager" << std::endl;
                 std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results = matchClusterWithBox(resultsCluster, task->getBox());
                 if(results->size() > 1)
