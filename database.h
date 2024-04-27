@@ -41,6 +41,7 @@ public:
    std::vector<std::shared_ptr<Box>> getAllBoxesInTray(int trayId) ;
     std::shared_ptr<Box> getBox(int tray, int boxId);
    std::tuple<double, double, double> getBoxDimensions(int boxId);
+    void updateBox(int id,double last_x, double last_y,double last_z);
 
 
 public slots:

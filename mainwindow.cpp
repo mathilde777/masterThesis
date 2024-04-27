@@ -175,7 +175,7 @@ void MainWindow::addButtonClicked()
 
         QString tray = trayComboBox->currentText();
 
-        QMessageBox::information(this, "Add", QString("Add box with id %1").arg(id));
+        QMessageBox::information(this, "Add", QString("Add box with product id %1").arg(id));
         std::cout << id << std::endl;
 
         std::cout << "arrived" << std::endl;

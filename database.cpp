@@ -78,7 +78,19 @@ std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
 }
 
 
-
+void Database::updateBox(int id,double last_x, double last_y,double last_z) {
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL updateBox(?,?, ?, ?)"));
+        pstmt->setInt(1, id);
+        pstmt->setDouble(2, last_x);
+        pstmt->setDouble(3, last_y);
+        pstmt->setDouble(4, last_z);
+        pstmt->execute();
+        std::cout << "UPdating Box with box id " << id << std::endl;
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+}
 
 
 void Database::storeBox(int id, int tray) {

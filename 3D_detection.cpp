@@ -5,9 +5,31 @@
 #include "3D_detection.h"
 #include <cmath> // For std::abs
 //std::shared_ptr<std::vector<ClusterInfo>>
-std::shared_ptr<std::vector<ClusterInfo>> run3DDetection() {
+std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPosititon) {
     PCL_3D pcl3d;
+    auto conversion = 5.64634146;
+    // Example file paths and vectors for reference
+    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/3box_center.ply";
+    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
+    auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
+    Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
+    float height = 10.0f; // Example height
+    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath, trayFilePath,refPoint,lastPosititon);
+    for (auto loc : boundingBoxInfo)
+    {
+        cout << "Cluster ID: " << loc.clusterId << endl;
+        cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
+        cout << "Dimensions: " << loc.dimensions.x()<< " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
+        std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversion << " " << loc.dimensions.y()/conversion << " " << loc.dimensions.z()/(conversion*1.5) << endl;
+        cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
+    }
+    return std::make_shared<std::vector<ClusterInfo>>(boundingBoxInfo);
 
+}
+
+std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
+    PCL_3D pcl3d;
+    auto conversion = 5.64634146;
     // Example file paths and vectors for reference
     std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/3box_center.ply";
     std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
@@ -19,7 +41,8 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection() {
     {
         cout << "Cluster ID: " << loc.clusterId << endl;
         cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
-        cout << "Dimensions: " << loc.dimensions.x() << " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
+        cout << "Dimensions: " << loc.dimensions.x()<< " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
+        std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversion << " " << loc.dimensions.y()/conversion << " " << loc.dimensions.z()/(conversion*1.5) << endl;
         cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
     }
     return std::make_shared<std::vector<ClusterInfo>>(boundingBoxInfo);
@@ -31,8 +54,9 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection() {
 
 std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, const std::shared_ptr<Box>& box) {
     std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches = std::make_shared<std::vector<std::pair<ClusterInfo, double>>>();
-    double tolerance = 0.4; // Adjust as needed using the slider
-
+    std::cout << "Matchingggg " << std::endl;
+    double tolerance = 2.0; // Adjust as needed using the slider
+    auto conversion = 5.64634146;
     std::vector<std::tuple<double, double, double>> dimensionPairs = {
         {box->width, box->height, box->length},
         {box->width, box->length, box->height},
@@ -43,9 +67,11 @@ std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox
     };
     for (const auto& cluster : *clusters) { 
             for (const auto& dimensions : dimensionPairs) {
-                double widthDiff = std::abs(std::get<0>(dimensions) - cluster.dimensions.x());
-                double heightDiff = std::abs(std::get<1>(dimensions) - cluster.dimensions.y());
-                double lengthDiff = std::abs(std::get<2>(dimensions) - cluster.dimensions.z());
+            std::cout << "DImension pair " << std::get<0>(dimensions) << " : " << std::get<1>(dimensions) << " : "  << std::get<2>(dimensions) <<  std::endl;
+                std::cout << "Dimensions of cluster: " << cluster.dimensions.x()/conversion << " " << cluster.dimensions.y()/conversion << " " << cluster.dimensions.z()/(conversion*1.5) << endl;
+            double widthDiff = std::abs(std::get<0>(dimensions) - cluster.dimensions.x()/conversion);
+                double heightDiff = std::abs(std::get<1>(dimensions) - cluster.dimensions.y()/conversion);
+                double lengthDiff = std::abs(std::get<2>(dimensions) - cluster.dimensions.z()/ (conversion*1.5));
 
 
                 if (widthDiff < tolerance && heightDiff < tolerance && lengthDiff < tolerance) {
@@ -80,7 +106,8 @@ std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox
 
 
 void updateBoxLocations(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, const std::vector<std::shared_ptr<Box>>& boxes) {
-    double tolerance = 0.4;
+    double tolerance = 2;
+    auto conversion = 5.64634146;
     for (const auto& cluster : *clusters) {
         std::shared_ptr<Box> bestMatch;
         double bestDifference = std::numeric_limits<double>::max();
@@ -97,9 +124,9 @@ void updateBoxLocations(const std::shared_ptr<std::vector<ClusterInfo>>& cluster
             };
 
             for (const auto& dimensions : dimensionPairs) {
-                double widthDiff = std::abs(std::get<0>(dimensions) - cluster.dimensions.x());
-                double heightDiff = std::abs(std::get<1>(dimensions) - cluster.dimensions.y());
-                double lengthDiff = std::abs(std::get<2>(dimensions) - cluster.dimensions.z());
+                double widthDiff = std::abs(std::get<0>(dimensions) - cluster.dimensions.x()/conversion);
+                double heightDiff = std::abs(std::get<1>(dimensions) - cluster.dimensions.y()/conversion);
+                double lengthDiff = std::abs(std::get<2>(dimensions) - cluster.dimensions.z()/ (conversion*1.5));
 
                 if (widthDiff < tolerance && heightDiff < tolerance && lengthDiff < tolerance) {
                     double totalDifference = widthDiff + heightDiff + lengthDiff;
@@ -123,6 +150,3 @@ void updateBoxLocations(const std::shared_ptr<std::vector<ClusterInfo>>& cluster
         }
     }
 }
-
-
-

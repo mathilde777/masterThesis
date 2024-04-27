@@ -50,6 +50,7 @@ public:
     void findBoxesOfSameSize(const Box& box1);
     void update(int trayId);
     bool dimensionsMatch(const ClusterInfo& cluster, const Box& box);
+    int tray;
 signals:
     void trayDockedUpdate();
     void taskPrepared();

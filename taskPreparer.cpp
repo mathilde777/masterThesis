@@ -31,7 +31,8 @@ void TaskPreparer::getTasks() {
     tasks = db->getTasks(trayId);
     for (const auto& task : tasks) {
         std::cout << "TASK: " << task->getId() << std::endl;
-
+        if(task->task_type == 0)
+        {
         // Fetch box information using the task's box ID
         auto box = db->getBox(trayId, task->getBoxId());
         if (box) {
@@ -39,6 +40,7 @@ void TaskPreparer::getTasks() {
             task->setBox(box);
         } else {
             std::cerr << "Error: Unable to retrieve box information for task " << task->getId() << std::endl;
+        }
         }
     }
 }
