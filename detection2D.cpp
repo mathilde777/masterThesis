@@ -54,13 +54,19 @@ std::vector<DetectionResult> getLabels(const std::string& buffer) {
         std::string center_str = buffer.substr(center_start + 1, center_end - center_start - 1);
         sscanf(center_str.c_str(), "%lf,%lf", &result.center.first, &result.center.second);
 
-        // Extract label
         size_t label_start = buffer.find("\"label\"", center_end);
         size_t label_quote_start = buffer.find("\"", label_start + 7);
         size_t label_quote_end = buffer.find("\"", label_quote_start + 1);
-        result.label = buffer.substr(label_quote_start + 1, label_quote_end - label_quote_start - 1);
+        std::string label_str = buffer.substr(label_quote_start + 1, label_quote_end - label_quote_start - 1);
 
-        // Add the DetectionResult to the results vector
+        // Find the position of the numeric part in the label string
+        size_t numeric_start = label_str.find_first_of("0123456789");
+
+        // Extract the numeric part of the label
+        int label = std::stoi(label_str.substr(numeric_start));
+
+        // Add the DetectionResult to the results vector with the integer label
+        result.label = label;
         results.push_back(result);
 
         // Move to the next detection result

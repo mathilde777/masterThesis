@@ -7,7 +7,7 @@
 #include <vector>
 
 struct DetectionResult {
-    std::string label;
+    int label;
     std::pair<double, double> dimensions;
     std::pair<double, double> center;
 

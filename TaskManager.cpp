@@ -63,6 +63,7 @@ void TaskManager::trayDocked() {
 void TaskManager::executeTasks() {
 
     bool success = false;
+    noResults = false;
     if ( !taskExecuting) {
         auto task = executingQueue.front();
          std::cout << "crash?" << std::endl;
@@ -78,19 +79,24 @@ void TaskManager::executeTasks() {
         {
             findBoxesOfSameSize(*task->getBox());
              std::cout << "finding box" << std::endl;
-                std::cout << "RUN 3D imaging" << std::endl;
+             std::cout << "RUN 3D imaging" << std::endl;
 
+                //cropping to match box prervius side
+                //TODO: need check for if previous is 0,0,0 it means there never was an update and thus must take the whole image -> after testing
              Eigen::Vector3f lastPosititon;
-                lastPosititon << task->getBox()->getLastX(),task->getBox()->getLastY(), task->getBox()->getLastZ();
+             lastPosititon << task->getBox()->getLastX(),task->getBox()->getLastY(), task->getBox()->getLastZ();
              Eigen::Vector3f dimensions;
              lastPosititon << task->getBox()->getWidth(),task->getBox()->getLength(), task->getBox()->getWidth();
 
              std::cout << "Last position: " << lastPosititon << std::endl;
              std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection(lastPosititon, dimensions);
-                std::cout << "back in task manager" << std::endl;
-                std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results = matchClusterWithBox(resultsCluster, task->getBox());
+             std::cout << "back in task manager" << std::endl;
+             std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results = matchClusterWithBox(resultsCluster, task->getBox());
+
+
                 if(results->size() > 1)
                 {
+
                    //check with 2 D
                    std::shared_ptr<std::vector<DetectionResult>> result2D = run2D("/home/user/Documents/Thesis/ModelsV3/ModelsV3/3box_center.png");
                     for( const auto res : *result2D)
@@ -312,3 +318,72 @@ void TaskManager::findBoxesOfSameSize(const Box& box1)
 
 }
 
+void TaskManager::match_box(std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results, std::shared_ptr<Task> task)
+
+{
+    switch(results->size()) {
+        //CASE: no resutls found: could indicate error or jsut hthat the box moved
+    case 0: {
+        if(noResults)
+        {
+              std::cout << "ERROR CANNOT FIND BOX " << std::endl;
+        }
+        else
+        {
+              handleNoResults(task);
+        }
+        break;
+    }
+        //CASE: 1 box found-> ideal case
+    case 1: {
+        db->updateBox(task->getBoxId(), results->begin()->first.centroid.x(), results->begin()->first.centroid.y(), results->begin()->first.centroid.z());
+        break;
+    }
+        //CASE: mulitple boxes found -> multiple options
+    default: {
+        //check with 2 D
+        std::cout << "Looking for box wiht id " <<  task->getBoxId() << std::endl;
+
+        for(std::shared_ptr<Box> box_id : possibleSameSize ){
+            std::cout << "But alos these boxes are possible" << box_id->getBoxId() << std::endl;
+        }
+
+        std::shared_ptr<std::vector<DetectionResult>> result2D = run2D("/home/user/Documents/Thesis/ModelsV3/ModelsV3/3box_center.png");
+
+        for (auto it = result2D->begin(); it != result2D->end();) {
+            if ((*it).label != task->getBox()->getBoxId()) {
+                it = result2D->erase(it); // erase() removes the current element and returns the next iterator
+            } else {
+                ++it; // Move to the next element
+            }
+        }
+        switch(result2D->size()) {
+            //CASE: no resutls found: could indicate error or jsut hthat the box moved
+        case 0: {
+
+            break;
+        }
+        //CASE: 1 box found-> ideal case
+        case 1: {
+            break;
+
+        }
+        //CASE: mulitple boxes found -> multiple options
+        default: {
+
+            break;
+        }
+        }
+
+
+
+        break;
+    }
+    }
+}
+void TaskManager::handleNoResults(std::shared_ptr<Task> task) {
+    noResults = true;
+    std::shared_ptr<std::vector<ClusterInfo>> resultsCluster2 = run3DDetection();
+    std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results2 = matchClusterWithBox(resultsCluster2, task->getBox());
+    match_box(results2, task);
+}

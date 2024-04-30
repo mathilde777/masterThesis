@@ -51,6 +51,10 @@ public:
     void update(int trayId);
     bool dimensionsMatch(const ClusterInfo& cluster, const Box& box);
     int tray;
+
+    void match_box(std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results, std::shared_ptr<Task> task);
+    void handleNoResults(std::shared_ptr<Task> task);
+    bool noResults;
 signals:
     void trayDockedUpdate();
     void taskPrepared();
