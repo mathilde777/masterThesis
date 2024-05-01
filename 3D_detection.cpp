@@ -9,8 +9,10 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
     PCL_3D pcl3d;
     auto conversion = 5.64634146;
     // Example file paths and vectors for reference
-    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/3box_center.ply";
-    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
+    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV4/2ntn_box.ply";
+    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV4/empty.ply";
+
+    //std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
     auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
     Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
     float height = 10.0f; // Example height
@@ -31,8 +33,9 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
     PCL_3D pcl3d;
     auto conversion = 5.64634146;
     // Example file paths and vectors for reference
-    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/3box_center.ply";
-    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
+    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV4/2ntn_box.ply";
+    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV4/empty.ply";
+    //std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
     auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
     Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
     float height = 10.0f; // Example height

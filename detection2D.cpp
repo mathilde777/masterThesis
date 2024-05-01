@@ -6,17 +6,28 @@
 #include <cstring>
 #include <sstream>
 
-std::shared_ptr<std::vector<DetectionResult>> run2D(const char* file_path) {
-    std::string buffer = getBuffer(file_path);
+std::shared_ptr<std::vector<DetectionResult>> run2D(const char* file_path, int index) {
+    std::string buffer = getBuffer(file_path, index);
     std::vector<DetectionResult> result = getLabels(buffer);
     return std::make_shared<std::vector<DetectionResult>>(result);
 }
 
-std::string getBuffer(const char* file_path) {
+std::string getBuffer(const char* file_path, int index) {
     // Create the command string with the file path variable
     char command[200];
-    snprintf(command, sizeof(command), "curl -X POST http://localhost:5001/predict -H \"Content-Type: application/json\" -d \"{\\\"img_path\\\": \\\"%s\\\"}\" 2>&1", file_path);
+    if(index = 0)
+    {
+        std::cout << "Running predict" << std::endl;
 
+        snprintf(command, sizeof(command), "curl -X POST http://localhost:5001/predict -H \"Content-Type: application/json\" -d \'{\\\"img_path\\\": \\\"%s\\\"}\' 2>&1", file_path);
+
+    }
+    else if(index == 1)
+    {
+        std::cout << "Running predict cropped box" << std::endl;
+        snprintf(command, sizeof(command), "curl -X POST http://localhost:5001/predict_box -H \"Content-Type: application/json\" -d \"{\\\"img_path\\\": \\\"%s\\\"}\" 2>&1", file_path);
+
+    }
     FILE *pipe = popen(command, "r");
     if (pipe == nullptr) {
         perror("popen failed");

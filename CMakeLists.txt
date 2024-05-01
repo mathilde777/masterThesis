@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)
 find_package(PCL 1.3 REQUIRED COMPONENTS common io filters visualization segmentation surface)
-##find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
 add_definitions(${PCL_DEFINITIONS})
@@ -55,7 +55,7 @@ add_executable(simulation ${SOURCES}
     matchingLogic.h )
 
 # Include MySQL Connector/C++ headers
-target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include)
+target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include ${OpenCV_INCLUDE_DIRS})
 
 # Link against MySQL Connector/C++ library
 link_directories(/home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/lib64)
@@ -69,4 +69,5 @@ target_link_libraries(simulation PRIVATE Qt6::Core Qt6::Widgets Qt6::Sql
     mysqlcppconn
     ${CURL_LIBRARIES}
     ${PCL_LIBRARIES}
+      ${OpenCV_LIBS}
     /home/user/Documents/Thesis/library/lib/lib3DSystem.so)
