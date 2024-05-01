@@ -1,7 +1,6 @@
 #include "taskPreparer.h"
 #include "database.h"
 #include "qtimer.h"
-#include "qtmetamacros.h"
 #include <iostream>
 #include "box.h"
 

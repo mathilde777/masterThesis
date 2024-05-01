@@ -1,13 +1,14 @@
 #include "database.h"
 #include "task.h"
-#include <cppconn/prepared_statement.h>
+#include <prepared_statement.h>
+#include "/usr/include/mysql-cppconn-8/jdbc/mysql_driver.h"
 #include <iostream>
 
 #include <vector>
 
 #define EXAMPLE_HOST "tcp://127.0.0.1:3306"
 #define EXAMPLE_USER "root"
-#define EXAMPLE_PASS "linux123"
+#define EXAMPLE_PASS "S2231001"
 #define EXAMPLE_DB "thesis"
 
 

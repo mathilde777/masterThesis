@@ -9,7 +9,7 @@
 #include <string>
 #include "detection2D.h"
 #include <QDebug>
-#include "/home/user/Documents/Thesis/library/lib/include/pcl_3d.h"
+#include "pcl_3d.h"
 
 using namespace std;
 //#include <QtSqlDatabase>

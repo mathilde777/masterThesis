@@ -3,7 +3,6 @@
 #include "database.h"
 #include "detection2D.h"
 #include "qeventloop.h"
-#include "qtmetamacros.h"
 #include "taskPreparer.h"
 #include <QTimer>
 #include <memory>

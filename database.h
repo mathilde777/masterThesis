@@ -2,8 +2,11 @@
 #define DATABASE_H
 
 #include "task.h"
-#include <mysql_connection.h>
-#include <mysql_driver.h>
+#include <driver.h>
+#include <exception.h>
+#include <resultset.h>
+#include <statement.h>
+#include "prepared_statement.h"
 #include <vector>
 #include <QObject>
 
