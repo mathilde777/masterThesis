@@ -7,6 +7,7 @@
 #include "qtimer.h"
 #include "task.h"
 #include <memory> // For std::shared_ptr
+#include "photoProcessing.h"
 //#include "/home/suleyman/Desktop/MasterThesis/library/lib/include/pcl_3d.h"
 
 class TaskManager : public QObject {
@@ -41,6 +42,10 @@ public:
     std::vector<std::shared_ptr<Task>> executingQueue;
     std::vector<std::shared_ptr<Task>> preparedQueue;
 
+    //Initiate PhotoProcessing
+    std::shared_ptr<PhotoProcessor> photoProcessing;
+
+
 
     bool donePreparing;
     int run3DDetectionThread();
@@ -55,6 +60,14 @@ public:
     void match_box(std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results, std::shared_ptr<Task> task);
     void handleNoResults(std::shared_ptr<Task> task);
     bool noResults;
+
+    double distance(double x1, double y1, double z1, double x2, double y2, double z2);
+    bool compareClosestToClusterCenter(const std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>& a,
+                                                    const std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>& b);
+
+    void deleteClusterById(std::shared_ptr<std::vector<ClusterInfo>> resultsCluster, int id);
+    void putZeroLocationBoxesAtBack(std::vector<std::shared_ptr<Box>>& trayBoxes);
+    bool isClusterAlreadyInList(int clusterId, const std::shared_ptr<std::vector<ClusterInfo>>& clusters);
 signals:
     void trayDockedUpdate();
     void taskPrepared();
