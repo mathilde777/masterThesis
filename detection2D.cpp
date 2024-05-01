@@ -12,22 +12,32 @@ std::shared_ptr<std::vector<DetectionResult>> run2D(const char* file_path, int i
     return std::make_shared<std::vector<DetectionResult>>(result);
 }
 
+// Correctly escapes file paths for inclusion in a JSON string.
+std::string escapeJsonString(const std::string& input) {
+    std::string output;
+    output.reserve(input.length() + 20); // More space for potential escape characters
+    for (char c : input) {
+        switch (c) {
+        case '\\': output += "\\\\"; break;
+        case '"':  output += "\\\""; break;
+        default:   output += c; break;
+        }
+    }
+    return output;
+}
+
 std::string getBuffer(const char* file_path, int index) {
-    // Create the command string with the file path variable
-    char command[200];
-    if(index = 0)
-    {
+    char command[512];
+    std::string escapedPath = escapeJsonString(file_path);
+
+    if (index == 0) {
         std::cout << "Running predict" << std::endl;
-
-        snprintf(command, sizeof(command), "curl -X POST http://localhost:5001/predict -H \"Content-Type: application/json\" -d \'{\\\"img_path\\\": \\\"%s\\\"}\' 2>&1", file_path);
-
-    }
-    else if(index == 1)
-    {
+        snprintf(command, sizeof(command), "curl -X POST http://localhost:5001/predict -H \"Content-Type: application/json\" -d '{\"img_path\": \"%s\"}' 2>&1", escapedPath.c_str());
+    } else if (index == 1) {
         std::cout << "Running predict cropped box" << std::endl;
-        snprintf(command, sizeof(command), "curl -X POST http://localhost:5001/predict_box -H \"Content-Type: application/json\" -d \"{\\\"img_path\\\": \\\"%s\\\"}\" 2>&1", file_path);
-
+        snprintf(command, sizeof(command), "curl -X POST http://localhost:5001/predict_box -H \"Content-Type: application/json\" -d '{\"img_path\": \"%s\"}' 2>&1", escapedPath.c_str());
     }
+
     FILE *pipe = popen(command, "r");
     if (pipe == nullptr) {
         perror("popen failed");
