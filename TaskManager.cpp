@@ -168,21 +168,30 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
             std::cout << "Path: " << PNGPath->c_str() << std::endl;
 
             //check if Path is correct , return string if not correct ==> Error
-            if(!PNGPath)
-            {
+            if(!PNGPath){
                 std::cout << "Error: No PNG file found" << std::endl;
                 break;
             }
-            else
-            {
-                std::cout << "Looking for box wiht id " <<  task->getBoxId() << std::endl;
+            //iNtegrate Cropping
+            photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
+
+            auto PNGPathCropped = photoProcessing->findLatestPngFile(directory);
+            std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
+
+            //check if Path is correct , return string if not correct ==> Error
+            if(!PNGPathCropped){
+                std::cout << "Error: No PNG file found" << std::endl;
+                break;
+            }
+            else{
+                std::cout << "Looking for box wiht id " <<  box->getBoxId() << std::endl;
             }
             //check with 2 D
-            std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPath->c_str(), 0);
-            if(!ret2->empty())
+            std::shared_ptr<std::vector<DetectionResult>> res2D = run2D(PNGPathCropped->c_str(), 0);
+            if(!res2D->empty())
             {
-                if (ret2->begin()->label != task->getBox()->getBoxId()) {
-                    std::cout << "BOX type" << ret2->begin()->label << std::endl;
+                if (res2D->begin()->label != task->getBox()->getBoxId()) {
+                    std::cout << "BOX type" << res2D->begin()->label << std::endl;
                     itn = results->erase(itn);
                 } else {
                     ++itn;
@@ -398,12 +407,22 @@ void TaskManager::update(int id)
                     std::cout << "Error: No PNG file found" << std::endl;
                     break;
                 }
+                //iNtegrate Cropping
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+
+                auto PNGPathCropped = photoProcessing->findLatestPngFile(directory);
+                std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
+
+                //check if Path is correct , return string if not correct ==> Error
+                if(!PNGPathCropped){
+                    std::cout << "Error: No PNG file found" << std::endl;
+                    break;
+                }
                 else{
                     std::cout << "Looking for box wiht id " <<  box->getBoxId() << std::endl;
                 }
-                //iNtegrate Cropping
                 //check with 2 D
-                std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPath->c_str(), 0);
+                std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPathCropped->c_str(), 1);
                 for( const auto res : *ret2)
                 {
                         std::cout << "2D Boxx" << res.label << std::endl;

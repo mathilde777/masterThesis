@@ -42,7 +42,7 @@ public:
         cv::Mat croppedImage = image(roi);
 
         // Save the cropped image as JPEG
-        std::string outputPath = "/home/user/windows-share/cropped_image.jpg";
+        std::string outputPath = "/home/suleyman/windows-share/cropped_image.jpg";
         cv::imwrite(outputPath, croppedImage);
 
         return outputPath;
