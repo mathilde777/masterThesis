@@ -14,7 +14,7 @@ struct DetectionResult {
 };
 std::shared_ptr<std::vector<DetectionResult>> run2D(const char* file_path, int index);
 std::string getBuffer(const char* file_path, int index);
-std::vector<DetectionResult> getLabels(const std::string& buffer);
+std::vector<DetectionResult> getLabels(const std::string& buffer, int index);
 
 #endif // DETECTION2D_H
 

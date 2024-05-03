@@ -14,8 +14,6 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 
     //std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
     auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
-    Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
-    float height = 10.0f; // Example height
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath, trayFilePath,refPoint,lastPosititon,dimensions);
     for (auto loc : boundingBoxInfo)
     {

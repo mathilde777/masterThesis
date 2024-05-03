@@ -52,8 +52,8 @@ public:
     bool dimensionsMatch(const ClusterInfo& cluster, const Box& box);
     int tray;
 
-    void match_box(std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results, std::shared_ptr<Task> task);
-    void handleNoResults(std::shared_ptr<Task> task);
+    Eigen::Vector3f match_box(std::shared_ptr<std::vector<ClusterInfo>> results, std::shared_ptr<Task> task);
+    Eigen::Vector3f handleNoResults(std::shared_ptr<Task> task);
     bool noResults;
 
     double distance(double x1, double y1, double z1, double x2, double y2, double z2);
@@ -63,6 +63,8 @@ public:
     void deleteClusterById(std::shared_ptr<std::vector<ClusterInfo>> resultsCluster, int id);
     void putZeroLocationBoxesAtBack(std::vector<std::shared_ptr<Box>>& trayBoxes);
     bool isClusterAlreadyInList(int clusterId, const std::shared_ptr<std::vector<ClusterInfo>>& clusters);
+    bool compareBoxPtrByID(const std::shared_ptr<Box>& boxPtr1, const std::shared_ptr<Box>& boxPtr2);
+    void sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes) ;
 signals:
     void trayDockedUpdate();
     void taskPrepared();

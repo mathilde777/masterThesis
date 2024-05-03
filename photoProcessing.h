@@ -2,9 +2,15 @@
 #define PHOTOPROCESSING_H
 
 #include <opencv2/opencv.hpp>
+#include <optional>
+#include <iostream>
+#include <filesystem>
+#include <string>
 
 //#include <opencv>
+namespace fs = std::filesystem;
 class PhotoProcessor {
+
 public:
     // Function to crop the image to a specified box
     std::string cropToBox(const std::string& imagePath, int x, int y, int width, int height) {
@@ -36,12 +42,60 @@ public:
         cv::Mat croppedImage = image(roi);
 
         // Save the cropped image as JPEG
-        std::string outputPath = "/home/user/Desktop/test/cropped_image.jpg";
+        std::string outputPath = "/home/user/windows-share/cropped_image.jpg";
         cv::imwrite(outputPath, croppedImage);
 
         return outputPath;
     }
 
+    // Function to find the latest .ply file in a given directory
+    std::optional<std::string> findLatestPlyFile(const std::string& directory) {
+        std::optional<std::string> latestFile;
+        auto latestTime = fs::file_time_type::min();
+
+        // Check if the directory exists and is a directory
+        if (!fs::exists(directory) || !fs::is_directory(directory)) {
+            std::cerr << "Provided path is not a directory or doesn't exist.\n";
+            return latestFile;
+        }
+
+        // Iterate through each item in the directory
+        for (const auto& entry : fs::directory_iterator(directory)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".ply") {
+                auto currentFileTime = fs::last_write_time(entry);
+                if (currentFileTime > latestTime) {
+                    latestTime = currentFileTime;
+                    latestFile = entry.path(); // Store the full path instead of just the filename
+                }
+            }
+        }
+
+        return latestFile;
+    }
+
+    //Function to find the latest .png file in a given directory
+    std::optional<std::string> findLatestPngFile(const std::string& directory) {
+        namespace fs = std::filesystem;
+        std::optional<std::string> latestFile;
+        auto latestTime = fs::file_time_type::min();
+
+        if (!fs::exists(directory) || !fs::is_directory(directory)) {
+            std::cerr << "Provided path is not a directory or doesn't exist.\n";
+            return latestFile;
+        }
+
+        for (const auto& entry : fs::directory_iterator(directory)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".jpg") {
+                auto currentFileTime = fs::last_write_time(entry);
+                if (currentFileTime > latestTime) {
+                    latestTime = currentFileTime;
+                    latestFile = entry.path();
+                }
+            }
+        }
+
+        return latestFile;
+    }
 
 };
 
