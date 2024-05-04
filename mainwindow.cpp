@@ -184,10 +184,12 @@ void MainWindow::addButtonClicked()
         {
 
             db->addTask(id, 1, dockedTray);
+            std::cout << "Adding task " << id << " to tray " << dockedTray << std::endl;
         }
         else
         {
             db->addTask(id, 1, tray.toInt());
+            std::cout << "Adding task " << id << " to tray " << tray.toInt() << std::endl;
         }
     } else {
         QMessageBox::warning(this, "Error", "Invalid selection");
