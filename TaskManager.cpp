@@ -13,7 +13,9 @@
 #include <vector>    // for std::vector
 #include <algorithm>
 #include <iostream>
-
+#include <QCoreApplication>
+#include <QObject>
+#include <QMetaType>
 
 TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);

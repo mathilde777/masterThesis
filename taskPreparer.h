@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QThread>
 #include <memory>
+#include <QMetaType>
 #include "database.h"
 #include "task.h"
 

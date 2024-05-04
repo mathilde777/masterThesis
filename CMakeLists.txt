@@ -8,6 +8,8 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+cmake_policy(SET CMP0144 NEW)
+
 
 # Find Qt6
 find_package(Qt5 REQUIRED COMPONENTS Core Widgets Sql)
@@ -60,18 +62,12 @@ add_executable(simulation ${SOURCES}
     matchingLogic.cpp
     matchingLogic.h )
 
-# Include MySQL Connector/C++ headers
-#target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include)
-
-# Link against MySQL Connector/C++ library
-#link_directories(/home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/lib64)
-
 # Include libcurl headers
 find_package(CURL REQUIRED)
 target_include_directories(simulation PRIVATE ${CURL_INCLUDE_DIRS} ${MYSQLCPPCONN_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} "/home/suleyman/Desktop/MasterThesis/library/lib/include" ${OpenCV_INCLUDE_DIRS})
 
 # Link against Qt modules and MySQL Connector/C++
-target_link_libraries(simulation PRIVATE Qt5::Core Qt5::Widgets Qt5::Sql
+target_link_libraries(simulation PRIVATE Qt5::Widgets Qt5::Sql Qt5::Core
         ${OpenCV_LIBS}
     ${CURL_LIBRARIES}
         ${MYSQLCPPCONN_LIBRARIES}
