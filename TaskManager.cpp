@@ -79,18 +79,18 @@ void TaskManager::executeTasks() {
             findBoxesOfSameSize(*task->getBox());
             std::cout << "finding box" << std::endl;
             std::cout << "RUN 3D imaging" << std::endl;
-            Eigen::Vector3f result;
                 //cropping to match box prervius side
                 //TODO: need check for if previous is 0,0,0 it means there never was an update and thus must take the whole image -> after testing
-            Eigen::Vector3f lastPosititon;
-            lastPosititon << task->getBox()->last_x,task->getBox()->last_y, task->getBox()->last_z;
-            Eigen::Vector3f dimensions;
-            dimensions << task->getBox()->width,task->getBox()->height, task->getBox()->length;
+            Eigen::Vector3f lastPosition(task->getBox()->last_x, task->getBox()->last_y, task->getBox()->last_z);
+            Eigen::Vector3f dimensions(task->getBox()->width, task->getBox()->height, task->getBox()->length);
 
-            std::cout << "Last position: " << lastPosititon << std::endl;
+
+            std::cout << "Last position: " << lastPosition << std::endl;
             std::cout << "Dimensions: " << dimensions << std::endl;
-            std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection(lastPosititon, dimensions);
-            result = match_box(resultsCluster,task);
+            std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection(lastPosition, dimensions);
+            auto result = match_box(resultsCluster,task);
+
+            std::cout << "Result: " << result << std::endl;
 
             if (result != Eigen::Vector3f(0.0f, 0.0f, 0.0f))
             {
@@ -117,7 +117,7 @@ void TaskManager::executeTasks() {
 
 //void TaskManager::match_box(std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results, std::shared_ptr<Task> task)
 Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>> results, std::shared_ptr<Task> task)
-{Eigen::Vector3f  result = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+{Eigen::Vector3f  result = Eigen::Vector3f();
 
     for(auto it = results->begin(); it != results->end();)
     {
@@ -141,7 +141,10 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
         break;
     }
     case 1: {
-        result << results->begin()->centroid;
+        auto& centroid = results->begin()->centroid;
+        if (centroid.size() >= 3) {
+            result << centroid(0), centroid(1), centroid(2);  // Explicitly copy the first three components
+        }
         break;
     }
     default: {

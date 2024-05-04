@@ -30,6 +30,9 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 
     //std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
     auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
+    //Update dimension by conversion factor (multiply by conversion factor for x,y) and z by conversion factor*1.5
+    dimensions = Eigen::Vector3f(dimensions.x()*conversion,dimensions.y()*conversion,dimensions.z()*(conversion/1.5));
+
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint,lastPosititon,dimensions);
 
     for (auto loc : boundingBoxInfo)
@@ -65,8 +68,6 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
     std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
     //std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
     auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
-    Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
-    float height = 10.0f; // Example height
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint);
     for (auto loc : boundingBoxInfo)
     {
