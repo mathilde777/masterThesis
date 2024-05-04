@@ -175,7 +175,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
             //iNtegrate Cropping
             photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
 
-            auto PNGPathCropped = photoProcessing->findLatestPngFile(directory);
+            auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
             std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
 
             //check if Path is correct , return string if not correct ==> Error
@@ -187,7 +187,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
                 std::cout << "Looking for box wiht id " <<  box->getBoxId() << std::endl;
             }
             //check with 2 D
-            std::shared_ptr<std::vector<DetectionResult>> res2D = run2D(PNGPathCropped->c_str(), 0);
+            std::shared_ptr<std::vector<DetectionResult>> res2D = run2D(PNGPathCropped->c_str(), 1);
             if(!res2D->empty())
             {
                 if (res2D->begin()->label != task->getBox()->getBoxId()) {
@@ -299,6 +299,7 @@ void TaskManager::update(int id)
     bool error2 = false;
     trayBoxes.clear();
     trayBoxes = db->getAllBoxesInTray(id);
+    std::cout << "Number of boxes in tray: " << trayBoxes.size() << std::endl;
     sortTrayBoxesByID(trayBoxes);
     putZeroLocationBoxesAtBack(trayBoxes);
     for(auto box : trayBoxes)
@@ -410,7 +411,7 @@ void TaskManager::update(int id)
                 //iNtegrate Cropping
                 photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
 
-                auto PNGPathCropped = photoProcessing->findLatestPngFile(directory);
+                auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
                 std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
 
                 //check if Path is correct , return string if not correct ==> Error

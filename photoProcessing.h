@@ -97,6 +97,31 @@ public:
         return latestFile;
     }
 
+    // Function to find the latest .png file from Cropped Images directory
+    std::optional<std::string> findLatestCroppedImage() {
+        std::string directory = "/home/suleyman/windows-share/temp";
+        namespace fs = std::filesystem;
+        std::optional<std::string> latestFile;
+        auto latestTime = fs::file_time_type::min();
+
+        if (!fs::exists(directory) || !fs::is_directory(directory)) {
+            std::cerr << "Provided path is not a directory or doesn't exist.\n";
+            return latestFile;
+        }
+
+        for (const auto& entry : fs::directory_iterator(directory)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".jpg") {
+                auto currentFileTime = fs::last_write_time(entry);
+                if (currentFileTime > latestTime) {
+                    latestTime = currentFileTime;
+                    latestFile = entry.path();
+                }
+            }
+        }
+
+        return latestFile;
+    }
+
 };
 
 #endif // PHOTOPROCESSING_H
