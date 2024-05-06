@@ -259,9 +259,11 @@ bool TaskManager::compareBoxPtrByID(const std::shared_ptr<Box>& boxPtr1, const s
 }
 
 // Sort function
+/**
 void TaskManager::sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes) {
     std::sort(trayBoxes.begin(), trayBoxes.end(), compareBoxPtrByID);
 }
+**/
 void TaskManager::update(int id)
 {
     std::cout << "runing update" << std::endl;
@@ -269,7 +271,7 @@ void TaskManager::update(int id)
     bool error2 = false;
     trayBoxes.clear();
     trayBoxes = db->getAllBoxesInTray(id);
-    sortTrayBoxesByID(trayBoxes);
+   // sortTrayBoxesByID(trayBoxes);
     putZeroLocationBoxesAtBack(trayBoxes);
     for(auto box : trayBoxes)
     {
