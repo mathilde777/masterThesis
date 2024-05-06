@@ -9,7 +9,10 @@
 #include <string>
 #include "detection2D.h"
 #include <QDebug>
-#include "/home/user/Documents/Thesis/library/lib/include/pcl_3d.h"
+#include "pcl_3d.h"
+#include <QMetaType>
+#include <memory>
+#include "task.h" // Make sure this includes your Task class definition
 
 using namespace std;
 //#include <QtSqlDatabase>
@@ -17,6 +20,8 @@ using namespace std;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    qRegisterMetaType<std::shared_ptr<Task>>("std::shared_ptr<Task>");
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();

@@ -10,7 +10,6 @@
 #define EXAMPLE_PASS "linux123"
 #define EXAMPLE_DB "thesis"
 
-
 //CONNECTION TO DATABASE
 
 

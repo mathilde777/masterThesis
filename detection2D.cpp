@@ -12,6 +12,7 @@ std::shared_ptr<std::vector<DetectionResult>> run2D(const char* file_path, int i
     return std::make_shared<std::vector<DetectionResult>>(result);
 }
 
+// Correctly escapes file paths for inclusion in a JSON string.
 std::string escapeJsonString(const std::string& input) {
     std::string output;
     output.reserve(input.length() + 20); // More space for potential escape characters
@@ -25,10 +26,8 @@ std::string escapeJsonString(const std::string& input) {
     return output;
 }
 
-
 std::string getBuffer(const char* file_path, int index) {
-    // Create the command string with the file path variable
-     char command[512];
+    char command[512];
     std::string escapedPath = escapeJsonString(file_path);
 
     if (index == 0) {

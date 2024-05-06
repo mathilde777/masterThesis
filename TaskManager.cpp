@@ -3,7 +3,6 @@
 #include "database.h"
 #include "detection2D.h"
 #include "qeventloop.h"
-#include "qtmetamacros.h"
 #include "taskPreparer.h"
 #include <QTimer>
 #include <memory>
@@ -14,8 +13,9 @@
 #include <vector>    // for std::vector
 #include <algorithm>
 #include <iostream>
-
-
+#include <QCoreApplication>
+#include <QObject>
+#include <QMetaType>
 
 TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
@@ -31,10 +31,10 @@ TaskManager::~TaskManager() {
 void TaskManager::prepTasks(int id)
 {
     std::cout << "about to make the tasks"<< std::endl;
-    QThread* thread = new QThread;
+    QThread *thread = new QThread;
     tray = id;
     trayBoxes = db->getAllBoxesInTray(id);
-    TaskPreparer* preparer = new TaskPreparer(id,db);
+    TaskPreparer *preparer = new TaskPreparer(id,db);
 
     preparer->moveToThread(thread);
 
@@ -77,33 +77,33 @@ void TaskManager::executeTasks() {
         else if(task->getType()==0)
         {
             findBoxesOfSameSize(*task->getBox());
-             std::cout << "finding box" << std::endl;
-             std::cout << "RUN 3D imaging" << std::endl;
-            Eigen::Vector3f result;
+            std::cout << "finding box" << std::endl;
+            std::cout << "RUN 3D imaging" << std::endl;
                 //cropping to match box prervius side
                 //TODO: need check for if previous is 0,0,0 it means there never was an update and thus must take the whole image -> after testing
-             Eigen::Vector3f lastPosititon;
-             lastPosititon << task->getBox()->last_x,task->getBox()->last_y, task->getBox()->last_z;
-             Eigen::Vector3f dimensions;
-             dimensions << task->getBox()->width,task->getBox()->height, task->getBox()->length;
+            Eigen::Vector3f lastPosition(task->getBox()->last_x, task->getBox()->last_y, task->getBox()->last_z);
+            Eigen::Vector3f dimensions(task->getBox()->width, task->getBox()->height, task->getBox()->length);
 
-             std::cout << "Last position: " << lastPosititon << std::endl;
-             std::cout << "Dimensions: " << dimensions << std::endl;
-             std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection(lastPosititon, dimensions);
-             result = match_box(resultsCluster,task);
 
-             if (result != Eigen::Vector3f(0.0f, 0.0f, 0.0f))
-             {
-                 std::cout << "task completed time to remove stored box" << task->getBoxId() << std::endl;
-                 db->removeStoredBox(task->getBoxId());
-                 std::cout << "FOUND AT " << result << std::endl;
-             }
-             else
+            std::cout << "Last position: " << lastPosition << std::endl;
+            std::cout << "Dimensions: " << dimensions << std::endl;
+            std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = run3DDetection(lastPosition, dimensions);
+            auto result = match_box(resultsCluster,task);
 
-             {
-                 std::cout << "BOX not found" << task->getBoxId() << std::endl;
-                 update(task->getTray());
-             }
+            std::cout << "Result: " << result << std::endl;
+
+            if (result != Eigen::Vector3f(0.0f, 0.0f, 0.0f))
+            {
+                std::cout << "task completed time to remove stored box" << task->getBoxId() << std::endl;
+                db->removeStoredBox(task->getBoxId());
+                std::cout << "FOUND AT " << result << std::endl;
+            }
+            else
+
+            {
+                std::cout << "BOX not found" << task->getBoxId() << std::endl;
+                update(task->getTray());
+            }
 
         }
 
@@ -111,12 +111,13 @@ void TaskManager::executeTasks() {
         executingQueue.erase(executingQueue.begin());
         emit taskCompleted();
     }
-
-
 }
+
+
+
 //void TaskManager::match_box(std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> results, std::shared_ptr<Task> task)
 Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>> results, std::shared_ptr<Task> task)
-{Eigen::Vector3f  result = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+{Eigen::Vector3f  result = Eigen::Vector3f();
 
     for(auto it = results->begin(); it != results->end();)
     {
@@ -140,7 +141,10 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
         break;
     }
     case 1: {
-        result << results->begin()->centroid;
+        auto& centroid = results->begin()->centroid;
+        if (centroid.size() >= 3) {
+            result << centroid(0), centroid(1), centroid(2);  // Explicitly copy the first three components
+        }
         break;
     }
     default: {
@@ -150,7 +154,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
             std::cout << "But alos these boxes are possible" << box_id->getBoxId() << std::endl;
         }
         auto box = task->getBox();
-        std::sort(results->begin(), results->end(), [box , this](const ClusterInfo& a, const ClusterInfo& b) {
+        std::sort(results->begin(), results->end(), [box , this](const ClusterInfo &a, const ClusterInfo &b) {
             // Calculate distances between cluster centroids and the box
             double distanceA = distance(a.centroid.x(), a.centroid.y(), a.centroid.z(),
                                         box->last_x, box->last_y, box->last_z);
@@ -163,11 +167,36 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
         for(auto itn = results->begin(); itn != results->end(); )
         {
             //iNtegrate Cropping
-            std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D("/home/user/Desktop/test/2ntn_box.png.jpg", 1);
-            if(!ret2->empty())
+            //Get latest png from PhotoProcessing
+            auto directory = "/home/user/windows-share";
+            auto PNGPath = photoProcessing->findLatestPngFile(directory);
+            std::cout << "Path: " << PNGPath->c_str() << std::endl;
+
+            //check if Path is correct , return string if not correct ==> Error
+            if(!PNGPath){
+                std::cout << "Error: No PNG file found" << std::endl;
+                break;
+            }
+            //iNtegrate Cropping
+            photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
+
+            auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
+            std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
+
+            //check if Path is correct , return string if not correct ==> Error
+            if(!PNGPathCropped){
+                std::cout << "Error: No PNG file found" << std::endl;
+                break;
+            }
+            else{
+                std::cout << "Looking for box wiht id " <<  box->getBoxId() << std::endl;
+            }
+            //check with 2 D
+            std::shared_ptr<std::vector<DetectionResult>> res2D = run2D(PNGPathCropped->c_str(), 1);
+            if(!res2D->empty())
             {
-                if (ret2->begin()->label != task->getBox()->getBoxId()) {
-                    std::cout << "BOX type" << ret2->begin()->label << std::endl;
+                if (res2D->begin()->label != task->getBox()->getBoxId()) {
+                    std::cout << "BOX type" << res2D->begin()->label << std::endl;
                     itn = results->erase(itn);
                 } else {
                     ++itn;
@@ -254,6 +283,7 @@ void TaskManager::onTaskCompleted() {
 }
 
 // Define a comparison function to compare IDs through shared pointers
+// Define a comparison function to compare IDs through shared pointers
 bool TaskManager::compareBoxPtrByID(const std::shared_ptr<Box>& boxPtr1, const std::shared_ptr<Box>& boxPtr2) {
     return boxPtr1->id < boxPtr2->id;
 }
@@ -261,9 +291,14 @@ bool TaskManager::compareBoxPtrByID(const std::shared_ptr<Box>& boxPtr1, const s
 // Sort function
 /**
 void TaskManager::sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes) {
-    std::sort(trayBoxes.begin(), trayBoxes.end(), compareBoxPtrByID);
+    std::sort(trayBoxes.begin(), trayBoxes.end(), [this](const std::shared_ptr<Box>& a, const std::shared_ptr<Box>& b) {
+        return this->compareBoxPtrByID(a, b);
+    });
+
 }
+<<<<<<< HEAD
 **/
+
 void TaskManager::update(int id)
 {
     std::cout << "runing update" << std::endl;
@@ -272,6 +307,7 @@ void TaskManager::update(int id)
     trayBoxes.clear();
     trayBoxes = db->getAllBoxesInTray(id);
    // sortTrayBoxesByID(trayBoxes);
+    std::cout << "Number of boxes in tray: " << trayBoxes.size() << std::endl;
     putZeroLocationBoxesAtBack(trayBoxes);
     for(auto box : trayBoxes)
     {
@@ -352,7 +388,7 @@ void TaskManager::update(int id)
 
             }
             // Sort the matchedBoxes vector based on distance to the box
-            std::sort(matchedBoxes.begin(), matchedBoxes.end(), [&box, this](const ClusterInfo& a, const ClusterInfo& b) {
+            std::sort(matchedBoxes.begin(), matchedBoxes.end(), [&box, this](const ClusterInfo &a, const ClusterInfo &b) {
                 // Calculate distances between cluster centroids and the box
                 double distanceA = distance(a.centroid.x(), a.centroid.y(), a.centroid.z(),
                                             box->last_x, box->last_y, box->last_z);
@@ -369,15 +405,49 @@ void TaskManager::update(int id)
 
             for(auto it = matchedBoxes.begin(); it != matchedBoxes.end(); )
             {
+                //Get latest png from PhotoProcessing
+                auto directory = "/home/user/windows-share";
+                auto PNGPath = photoProcessing->findLatestPngFile(directory);
+                std::cout << "Path: " << PNGPath->c_str() << std::endl;
+
+                //check if Path is correct , return string if not correct ==> Error
+                if(!PNGPath){
+                    std::cout << "Error: No PNG file found" << std::endl;
+                    break;
+                }
                 //iNtegrate Cropping
-                std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D("/home/user/Desktop/test/2ntn_box.png.jpg", 0);
-                if (ret2->size() > 0)
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+
+                auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
+                std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
+
+                //check if Path is correct , return string if not correct ==> Error
+                if(!PNGPathCropped){
+                    std::cout << "Error: No PNG file found" << std::endl;
+                    break;
+                }
+                else{
+                    std::cout << "Looking for box wiht id " <<  box->getBoxId() << std::endl;
+                }
+                //check with 2 D
+                std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPathCropped->c_str(), 1);
+                for( const auto res : *ret2)
                 {
-                    if (ret2->front().label != box->getBoxId())
-                    {
+                        std::cout << "2D Boxx" << res.label << std::endl;
                         it = matchedBoxes.erase(it);
                         continue;
                     }
+
+                    if (ret2->size() == 1)
+                    {
+                        if (ret2->front().label != box->getBoxId())
+                        {
+                            // Erase the element from matchedBoxes
+                            it = matchedBoxes.erase(it);
+                            continue; // Continue to the next iteration without incrementing it
+                        }
+                    }
+
                 }
 
                 ++it;
@@ -398,8 +468,6 @@ void TaskManager::update(int id)
 
         }
 
-    }
-
     //HNADEL ERROR BOXES
 
     if(!errorBoxes.empty())
@@ -417,10 +485,12 @@ void TaskManager::update(int id)
         }
     }
 }
+
+
 void TaskManager::deleteClusterById(std::shared_ptr<std::vector<ClusterInfo>> resultsCluster, int id) {
     auto& clusters = *resultsCluster;
 
-    auto it = std::remove_if(clusters.begin(), clusters.end(), [id](const ClusterInfo& cluster) {
+    auto it = std::remove_if(clusters.begin(), clusters.end(), [id](const ClusterInfo &cluster) {
         return cluster.clusterId == id;
     });
     clusters.erase(it, clusters.end());
@@ -446,6 +516,7 @@ bool TaskManager::isClusterAlreadyInList(int clusterId, const std::shared_ptr<st
 
     return false;
 }
+
 double TaskManager::distance(double x1, double y1, double z1, double x2, double y2, double z2) {
     return std::sqrt((x2 - x1) * (x2 - x1) +
                      (y2 - y1) * (y2 - y1) +
@@ -453,7 +524,7 @@ double TaskManager::distance(double x1, double y1, double z1, double x2, double 
 }
 
 bool TaskManager::compareClosestToClusterCenter(const std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>& a,
-                                   const std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>& b) {
+                                                const std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>& b) {
     const ClusterInfo& clusterA = a.first;
     const ClusterInfo& clusterB = b.first;
 
@@ -465,7 +536,8 @@ bool TaskManager::compareClosestToClusterCenter(const std::pair<ClusterInfo, std
 
     return distanceA < distanceB;
 }
-bool TaskManager::dimensionsMatch(const ClusterInfo& cluster, const Box& box1) {
+
+bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
     // Define a threshold for matching dimensions
     std::cout << "DIMENSION MATHCINGr" << std::endl;
     float threshold = 2.0; // Adjust as needed
@@ -497,7 +569,7 @@ bool TaskManager::dimensionsMatch(const ClusterInfo& cluster, const Box& box1) {
 
     return match;
 }
-void TaskManager::findBoxesOfSameSize(const Box& box1)
+void TaskManager::findBoxesOfSameSize(const Box &box1)
 {
     std::vector<std::tuple<double, double, double>> dimensionPairs1 = {
         {box1.width, box1.height, box1.length},

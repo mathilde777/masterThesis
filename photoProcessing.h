@@ -42,7 +42,7 @@ public:
         cv::Mat croppedImage = image(roi);
 
         // Save the cropped image as JPEG
-        std::string outputPath = "/home/user/windows-share/cropped_image.jpg";
+        std::string outputPath = "/home/suleyman/windows-share/cropped_image.jpg";
         cv::imwrite(outputPath, croppedImage);
 
         return outputPath;
@@ -75,6 +75,31 @@ public:
 
     //Function to find the latest .png file in a given directory
     std::optional<std::string> findLatestPngFile(const std::string& directory) {
+        namespace fs = std::filesystem;
+        std::optional<std::string> latestFile;
+        auto latestTime = fs::file_time_type::min();
+
+        if (!fs::exists(directory) || !fs::is_directory(directory)) {
+            std::cerr << "Provided path is not a directory or doesn't exist.\n";
+            return latestFile;
+        }
+
+        for (const auto& entry : fs::directory_iterator(directory)) {
+            if (entry.is_regular_file() && entry.path().extension() == ".jpg") {
+                auto currentFileTime = fs::last_write_time(entry);
+                if (currentFileTime > latestTime) {
+                    latestTime = currentFileTime;
+                    latestFile = entry.path();
+                }
+            }
+        }
+
+        return latestFile;
+    }
+
+    // Function to find the latest .png file from Cropped Images directory
+    std::optional<std::string> findLatestCroppedImage() {
+        std::string directory = "/home/suleyman/windows-share/temp";
         namespace fs = std::filesystem;
         std::optional<std::string> latestFile;
         auto latestTime = fs::file_time_type::min();

@@ -1,9 +1,11 @@
 #include "taskPreparer.h"
 #include "database.h"
 #include "qtimer.h"
-#include "qtmetamacros.h"
 #include <iostream>
 #include "box.h"
+
+#include <QMetaType>
+#include <memory>
 
 TaskPreparer::TaskPreparer(int trayId, std::shared_ptr<Database> db) : trayId(trayId) ,db(db){
      std::cout << "test6"<< std::endl;

@@ -9,12 +9,32 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
     PCL_3D pcl3d;
     auto conversion = 5.64634146;
     // Example file paths and vectors for reference
-    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV4/2ntn_box.ply";
-    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV4/empty.ply";
+    std::shared_ptr<PhotoProcessor> photoProcessing = std::make_shared<PhotoProcessor>();
+    //Get latest png from PhotoProcessing
+    auto directory = "/home/user/windows-share";
+    auto boxFilePath = photoProcessing->findLatestPlyFile(directory);
+    std::cout << "Path: " << boxFilePath->c_str() << std::endl;
 
-    //std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
+    //check if Path is correct , return string if not correct ==> Error
+    if(!boxFilePath)
+    {
+        std::cout << "Error: No PLY file found" << std::endl;
+    }
+    else{
+        std::cout << "PLY file found" << std::endl;
+    }
+
+
+
+    //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
+
+    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
     auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
-    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath, trayFilePath,refPoint,lastPosititon,dimensions);
+    //Update dimension by conversion factor (multiply by conversion factor for x,y) and z by conversion factor*1.5
+    dimensions = Eigen::Vector3f(dimensions.x()*conversion,dimensions.y()*conversion,dimensions.z()*(conversion/1.5));
+
+    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint,lastPosititon,dimensions);
+
     for (auto loc : boundingBoxInfo)
     {
         cout << "Cluster ID: " << loc.clusterId << endl;
@@ -30,14 +50,25 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
     PCL_3D pcl3d;
     auto conversion = 5.64634146;
+    std::shared_ptr<PhotoProcessor> photoProcessing = std::make_shared<PhotoProcessor>();
+
     // Example file paths and vectors for reference
-    std::string boxFilePath = "/home/user/Documents/Thesis/ModelsV4/2ntn_box.ply";
-    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV4/empty.ply";
-    //std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
+    auto directory = "/home/suleyman/windows-share";
+    auto boxFilePath = photoProcessing->findLatestPlyFile(directory);
+    std::cout << "Path: " << boxFilePath->c_str() << std::endl;
+
+    //check if Path is correct , return string if not correct ==> Error
+    if(!boxFilePath)
+    {
+        std::cout << "Error: No PLY file found" << std::endl;
+    }
+    else{
+        std::cout << "PLY file found" << std::endl;
+    }
+    //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
+    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
     auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
-    Eigen::Vector3f prevLocation(0.0f, 0.0f, 0.0f);   // Example previous location
-    float height = 10.0f; // Example height
-    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath, trayFilePath,refPoint);
+    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint);
     for (auto loc : boundingBoxInfo)
     {
         cout << "Cluster ID: " << loc.clusterId << endl;
