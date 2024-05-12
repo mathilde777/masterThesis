@@ -35,7 +35,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
     //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
     auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
     //Update dimension by conversion factor (multiply by conversion factor for x,y) and z by conversion factor*1.5
-    dimensions = Eigen::Vector3f(dimensions.x()*conversionX,dimensions.y()*conversionY,dimensions.z()*(conversionZ));
+    //dimensions = Eigen::Vector3f(dimensions.x()*conversionX,dimensions.y()*conversionY,dimensions.z()*(conversionZ));
 
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint,lastPosititon,dimensions);
 

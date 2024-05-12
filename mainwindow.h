@@ -35,6 +35,7 @@ private slots:
     void trayButtonClicked(int trayNumber);
    void populateBoxLists();
     void updateDockedInfo();
+   void updateButtonClicked();
 public slots:
    void updateStatusText(const QString& message);
    //void handleErrorTask(QString errorMessage, int taskId);
@@ -72,6 +73,7 @@ private:
     QTimer *trayTimer = nullptr;
     QLabel *dockedInfoLabel;
     QTextEdit *statusText;
+     QPushButton *updateButton = nullptr;
 
 signals:
     void trayDocked();
