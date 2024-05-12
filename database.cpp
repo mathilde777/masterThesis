@@ -187,8 +187,8 @@ void Database::removeStoredBox(int boxId) {
 
 
 // Execute MySQL stored procedure to get information about a box
-std::tuple<int, double, double, double, double, double, double> Database::getBoxInfo(int Id) {
-    std::tuple<int, double, double, double, double, double, double> boxInfo;
+std::tuple<int, double, double, double, double, double, double,Eigen::Vector3f> Database::getBoxInfo(int Id) {
+    std::tuple<int, double, double, double, double, double, double,Eigen::Vector3f> boxInfo;
 
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetBoxInfo(?)"));
@@ -206,7 +206,11 @@ std::tuple<int, double, double, double, double, double, double> Database::getBox
                 double last_x = resultSet->getDouble(5);
                 double last_y = resultSet->getDouble(6);
                 double last_z = resultSet->getDouble(7);
-                boxInfo = std::make_tuple(boxId, width, height, length, last_x, last_y, last_z);
+                double clusterX = resultSet->getDouble(8);
+                double clusterY = resultSet->getDouble(9);
+                double clusterZ = resultSet->getDouble(10);
+                boxInfo = std::make_tuple(boxId, width, height, length, last_x, last_y, last_z,Eigen::Vector3f(clusterX,clusterY,clusterZ));
+
             }
         }
 
@@ -420,8 +424,10 @@ std::shared_ptr<Box> Database::getBox(int tray, int Id) {
         double last_x = std::get<4>(boxInfo);
         double last_y = std::get<5>(boxInfo);
         double last_z = std::get<6>(boxInfo);
+        Eigen::Vector3f clusterD = std::get<7>(boxInfo);
 
         box = std::make_shared<Box>(Id, boxId, tray, last_x, last_y, last_z, width, height, length);
+        box->setCluster(clusterD);
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
@@ -450,9 +456,14 @@ std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
                 double width = resultSet->getDouble("width");
                 double height = resultSet->getDouble("height");
                 double length = resultSet->getDouble("length");
+                double clusterX = resultSet->getDouble("clusterX");
+                double clusterY = resultSet->getDouble("clusterY");
+                double clusterZ = resultSet->getDouble("clusterZ");
+
 
                 // Create a new Box object with the retrieved information
                 auto box = std::make_shared<Box>(id, boxId, trayId, lastX, lastY, lastZ, width, height, length);
+                box->setCluster(Eigen::Vector3f(clusterX,clusterY,clusterZ));
                 boxes.push_back(box);
             }
         }

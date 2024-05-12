@@ -29,7 +29,7 @@ set(SOURCES
     mainwindow.ui
     database.h
     database.cpp
-    addBox.cpp
+
 
 
     detection2D.h
@@ -38,8 +38,8 @@ set(SOURCES
     TaskManager.h
     taskPreparer.h
     taskPreparer.cpp
-    findCases.cpp
-    findCases.h
+
+
 
     photoProcessing.h
     3D_detection.cpp
@@ -51,8 +51,8 @@ set(SOURCES
 
 # Add an executable target
 add_executable(simulation ${SOURCES}
-    matchingLogic.cpp
-    matchingLogic.h )
+
+)
 
 # Include MySQL Connector/C++ headers
 target_include_directories(simulation PRIVATE /home/user/Downloads/mysql-connector-c++-8.3.0-linux-glibc2.28-x86-64bit/include ${OpenCV_INCLUDE_DIRS})

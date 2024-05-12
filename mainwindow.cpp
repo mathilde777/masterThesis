@@ -4,6 +4,7 @@
 #include <QComboBox>
 #include <QListWidget>
 #include <QLabel>
+#include <QDateTime>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), dockedTray(0),
@@ -18,6 +19,10 @@ MainWindow::MainWindow(QWidget *parent)
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
     dockedInfoLabel = new QLabel("No tray docked", this); // Initialize the QLabel
     mainLayout->addWidget(dockedInfoLabel);
+
+    statusText = new QTextEdit(this);
+    statusText->setReadOnly(true); // Make it read-only
+    mainLayout->addWidget(statusText);
     // Find section
     QVBoxLayout *findLayout = new QVBoxLayout;
     selectBoxLabel = new QLabel("Select Stored Box:", this);
@@ -100,6 +105,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(trayTimer, &QTimer::timeout, tm.get(), &TaskManager::trayDocked);
     connect(tm.get(), &TaskManager::refresh, this, &MainWindow::populateBoxLists);
     connect(tm.get(), &TaskManager::trayDockedUpdate, this, &MainWindow::updateDockedInfo);
+    //connect(tm.get(), &TaskManager::errorOccurredTask, this, &MainWindow::handleErrorTask);
+    //connect(tm.get(), &TaskManager::errorOccurredUpdate, this, &MainWindow::handleErrorUpdate);
+    connect(tm.get(), &TaskManager::updateStatus, this, &MainWindow::updateStatusText);
+
+
+
     populateBoxLists();
 
 }
@@ -204,7 +215,8 @@ void MainWindow::trayButtonClicked(int trayNumber){
     QString info = QString("Tray %1 docking").arg(trayNumber);
     dockedInfoLabel->setText(info);
 
-    trayTimer->start(15000); // 15 seconds
+    //trayTimer->start(15000); // 15 seconds
+    trayTimer->start(100);
     tm->prepTasks(trayNumber);
 
 }
@@ -214,3 +226,43 @@ void MainWindow::updateDockedInfo() {
     dockedInfoLabel->setText(info);
 }
 
+void MainWindow::updateStatusText(const QString& message) {
+    QString timestamp = QDateTime::currentDateTime().toString("[yyyy-MM-dd hh:mm:ss] ");
+    statusText->append(timestamp + message);
+}
+/**
+void MainWindow::handleErrorTask(QString errorMessage, int taskId) {
+    // Display error message
+    QMessageBox::critical(this, "Error", errorMessage);
+
+    // Ask user to fix the error
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Fix the error?", "Do you want to fix the error and retry the task?",
+                                  QMessageBox::Yes | QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        // Retry the task associated with the error
+        tm->retryTask(taskId);
+    } else {
+        // Skip the task and continue
+        tm->skipTask(taskId);
+    }
+}
+
+void MainWindow::handleErrorUpdate(QString errorMessage, int taskId) {
+    // Display error message
+    QMessageBox::critical(this, "Error", errorMessage);
+
+    // Ask user to fix the error
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Fix the error?", "Do you want to fix the error and retry the task?",
+                                  QMessageBox::Yes | QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        // Retry the task associated with the error
+        tm->retryTask(taskId);
+    } else {
+        // Skip the task and continue
+        tm->skipTask(taskId);
+    }
+}**/

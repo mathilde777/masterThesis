@@ -14,7 +14,7 @@
 #include <memory>
 #include "TaskManager.h"
 #include "database.h"
-#include "task.h"
+#include <QTextEdit>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -35,6 +35,10 @@ private slots:
     void trayButtonClicked(int trayNumber);
    void populateBoxLists();
     void updateDockedInfo();
+public slots:
+   void updateStatusText(const QString& message);
+   //void handleErrorTask(QString errorMessage, int taskId);
+    //void handleErrorUpdate(QString errorMessage);
 private:
 
 
@@ -67,6 +71,7 @@ private:
     QSlider *toleranceSlider = nullptr;
     QTimer *trayTimer = nullptr;
     QLabel *dockedInfoLabel;
+    QTextEdit *statusText;
 
 signals:
     void trayDocked();

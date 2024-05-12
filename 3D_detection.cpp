@@ -7,7 +7,9 @@
 //std::shared_ptr<std::vector<ClusterInfo>>
 std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPosititon,Eigen::Vector3f dimensions) {
     PCL_3D pcl3d;
-    auto conversion = 5.64634146;
+    auto conversionX = 6.50f;
+    auto conversionY = 8.00f;
+    auto conversionZ = 9.99f;
     // Example file paths and vectors for reference
     std::shared_ptr<PhotoProcessor> photoProcessing = std::make_shared<PhotoProcessor>();
     //Get latest png from PhotoProcessing
@@ -28,10 +30,12 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 
     //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
 
-    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
-    auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
+    std::string trayFilePath = "/home/user/windows-share/2024.5.7.13.22.26_Color_PointCloud.ply";
+
+    //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
+    auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
     //Update dimension by conversion factor (multiply by conversion factor for x,y) and z by conversion factor*1.5
-    dimensions = Eigen::Vector3f(dimensions.x()*conversion,dimensions.y()*conversion,dimensions.z()*(conversion/1.5));
+    dimensions = Eigen::Vector3f(dimensions.x()*conversionX,dimensions.y()*conversionY,dimensions.z()*(conversionZ));
 
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint,lastPosititon,dimensions);
 
@@ -40,7 +44,8 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
         cout << "Cluster ID: " << loc.clusterId << endl;
         cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
         cout << "Dimensions: " << loc.dimensions.x()<< " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
-        std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversion << " " << loc.dimensions.y()/conversion << " " << loc.dimensions.z()/(conversion*1.5) << endl;
+        cout << "Cluster Size Algo: " << loc.clusterSize << endl;
+        std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversionX << " " << loc.dimensions.y()/conversionY << " " << loc.dimensions.z()/(conversionZ) << endl;
         cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
     }
     return std::make_shared<std::vector<ClusterInfo>>(boundingBoxInfo);
@@ -49,11 +54,13 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 
 std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
     PCL_3D pcl3d;
-    auto conversion = 5.64634146;
+    auto conversionX = 6.50f;
+    auto conversionY = 8.00f;
+    auto conversionZ = 9.99f;
     std::shared_ptr<PhotoProcessor> photoProcessing = std::make_shared<PhotoProcessor>();
 
     // Example file paths and vectors for reference
-    auto directory = "/home/suleyman/windows-share";
+    auto directory = "/home/user/windows-share";
     auto boxFilePath = photoProcessing->findLatestPlyFile(directory);
     std::cout << "Path: " << boxFilePath->c_str() << std::endl;
 
@@ -66,15 +73,19 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
         std::cout << "PLY file found" << std::endl;
     }
     //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
-    std::string trayFilePath = "/home/user/Documents/Thesis/ModelsV3/ModelsV3/empty_tray.ply";
-    auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
+    std::string trayFilePath = "/home/user/windows-share/2024.5.7.13.22.26_Color_PointCloud.ply";
+
+    //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
+
+    auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint);
     for (auto loc : boundingBoxInfo)
     {
         cout << "Cluster ID: " << loc.clusterId << endl;
         cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
         cout << "Dimensions: " << loc.dimensions.x()<< " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
-        std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversion << " " << loc.dimensions.y()/conversion << " " << loc.dimensions.z()/(conversion*1.5) << endl;
+        cout << "Cluster Size Algo: " << loc.clusterSize << endl;
+        std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversionX << " " << loc.dimensions.y()/conversionY << " " << loc.dimensions.z()/(conversionZ) << endl;
         cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
     }
     return std::make_shared<std::vector<ClusterInfo>>(boundingBoxInfo);
@@ -83,7 +94,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
 
 
 
-
+/**
 std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, const std::shared_ptr<Box>& box) {
     std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches = std::make_shared<std::vector<std::pair<ClusterInfo, double>>>();
     std::cout << "Matchingggg " << std::endl;
@@ -182,3 +193,4 @@ void updateBoxLocations(const std::shared_ptr<std::vector<ClusterInfo>>& cluster
         }
     }
 }
+**/

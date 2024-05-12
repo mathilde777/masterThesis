@@ -32,6 +32,9 @@ public:
     void prepTask(int index);
     QTimer* executionTimer;
 
+    float conversionX;
+    float conversionY;
+    float conversionZ;
     std::vector<std::shared_ptr<Task>> executingQueue;
     std::vector<std::shared_ptr<Task>> preparedQueue;
 
@@ -68,6 +71,9 @@ signals:
     void taskCompleted();
     void refresh();
     void taskExecutionCompleted();
+     void errorOccurredTask(QString errorMessage , int taskId);
+     void errorOccurredUpdate(QString errorMessage);
+     void updateStatus(const QString& message);
 
 
 private slots:

@@ -30,10 +30,18 @@ public:
         // Calculate the bounding box coordinates
         int x1 = converted_x - width / 2;
         int y1 = converted_y - height / 2;
+        // Calculate the bounding box coordinates
+        //int x1 = std::max(0, static_cast<int>(converted_x) - width / 2);
+        //int y1 = std::max(0, static_cast<int>(converted_y) - height / 2);
+
 
         // Ensure the bounding box is within the image boundaries
         x1 = std::max(0, x1);
         y1 = std::max(0, y1);
+
+        //x1 = std::min(image.cols - 1, x1);
+        //y1 = std::min(image.rows - 1, y1);
+
         int x2 = std::min(image.cols - 1, x1 + width);
         int y2 = std::min(image.rows - 1, y1 + height);
 
@@ -42,7 +50,7 @@ public:
         cv::Mat croppedImage = image(roi);
 
         // Save the cropped image as JPEG
-        std::string outputPath = "/home/suleyman/windows-share/cropped_image.jpg";
+        std::string outputPath = "/home/user/windows-share/temp/cropped_image.jpg";
         cv::imwrite(outputPath, croppedImage);
 
         return outputPath;
@@ -99,7 +107,7 @@ public:
 
     // Function to find the latest .png file from Cropped Images directory
     std::optional<std::string> findLatestCroppedImage() {
-        std::string directory = "/home/suleyman/windows-share/temp";
+        std::string directory = "/home/user/windows-share/temp";
         namespace fs = std::filesystem;
         std::optional<std::string> latestFile;
         auto latestTime = fs::file_time_type::min();

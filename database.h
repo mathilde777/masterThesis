@@ -31,7 +31,7 @@ public:
     bool checkStoredBoxes(int boxId);
     bool checkKnownBoxes(int boxId);
 
-    std::tuple<int, double, double, double, double, double, double> getBoxInfo(int Id);
+    std::tuple<int, double, double, double, double, double, double,Eigen::Vector3f> getBoxInfo(int Id);
     bool checkExistingBoxes(int tray_id, int box_id);
     void removeTaskFromQueue(int taskId);
     int getTrayId(int box_id);

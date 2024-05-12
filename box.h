@@ -1,6 +1,7 @@
 #ifndef BOX_H
 #define BOX_H
-
+#include <Eigen/Geometry> // For Eigen::Quaternionf
+#include <Eigen/Dense> // For Eigen::Vector4f
 class Box{
 public:
     int id;
@@ -13,6 +14,8 @@ public:
     double width;
     double height;
     double length;
+
+    Eigen::Vector3f clusterDimensions;
 
     Box(int id, int boxId, int trayId, double x, double y, double z, double w, double h, double l)
         : id(id), boxId(boxId), trayId(trayId), last_x(x), last_y(y), last_z(z), width(w), height(h), length(l) {}
@@ -27,6 +30,7 @@ public:
     void setWidth(double width) { this->width = width; }
     void setHeight(double height) { this->height = height; }
     void setLength(double length) { this->length = length; }
+    void setCluster(Eigen::Vector3f cluster){ this->clusterDimensions = cluster; }
 
     // Getters
     int getId() const { return id; }
@@ -38,6 +42,7 @@ public:
     double getWidth() const { return width; }
     double getHeight() const { return height; }
     double getLength() const { return length; }
+    Eigen::Vector3f getClusterDimensions() const {return clusterDimensions;}
 };
 
 #endif // BOX_H
