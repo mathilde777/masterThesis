@@ -55,7 +55,7 @@ public:
 
     void deleteClusterById(std::shared_ptr<std::vector<ClusterInfo>> resultsCluster, int id);
     void putZeroLocationBoxesAtBack(std::vector<std::shared_ptr<Box>>& trayBoxes);
-    bool isClusterAlreadyInList(int clusterId, const std::shared_ptr<std::vector<ClusterInfo>>& clusters);
+    bool isClusterAlreadyInList(int clusterId);
     bool compareBoxPtrByID(const std::shared_ptr<Box>& boxPtr1, const std::shared_ptr<Box>& boxPtr2);
     void sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes);
     void sortResultsByDistance(std::shared_ptr<std::vector<ClusterInfo>>& results, const std::shared_ptr<Box>& box);

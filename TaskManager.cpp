@@ -325,7 +325,6 @@ void TaskManager::update(int id) {
     std::cout << "Number of boxes in tray: " << trayBoxes.size() << std::endl;
     putZeroLocationBoxesAtBack(trayBoxes);
 
-    // Perform 3D detection asynchronously
     std::future<std::shared_ptr<std::vector<ClusterInfo>>> resultFuture = std::async([this]() {
         return run3DDetection();
     });
@@ -344,13 +343,21 @@ void TaskManager::update(int id) {
     // Handling matched clusters and updating box information
     for (auto& match : matchesC) {
         handleMatchedBoxes(match.first, match.second);
+        for ( const auto& cluster : *matchedCluster) {
+
+            std::cout << "cluster in matched" << cluster.clusterId << std::endl;
+        }
     }
-    std::shared_ptr<std::vector<ClusterInfo>> errorClusters = std::make_shared<std::vector<ClusterInfo>>();
 
+    std::cout << "macthed bioxes " << matchedCluster->size() << std::endl;
+    for ( const auto& cluster : *matchedCluster) {
 
+        std::cout << "cluster in matched" << cluster.clusterId << std::endl;
+    }
     for ( const auto& cluster : *resultsCluster) {
 
-        if (!isClusterAlreadyInList(cluster.clusterId, matchedCluster)) {
+          std::cout << "cluster in results " << cluster.clusterId << std::endl;
+        if (!isClusterAlreadyInList(cluster.clusterId)) {
             errorClusters->push_back(cluster);
         }
     }
@@ -379,19 +386,25 @@ std::vector<std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>> TaskManag
     const std::vector<std::shared_ptr<Box>>& trayBoxes,
     const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster) {
     std::vector<std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>> matches;
+    std::cout << "CLUSTERS TO BOXES " <<    std::endl;
     for (const auto& cluster : *resultsCluster) {
         std::vector<std::shared_ptr<Box>> matchedBoxes;
         for (const auto& box : trayBoxes) {
             if (dimensionsMatch(cluster, *box)) {
                 matchedBoxes.push_back(box);
-                std::cout << "Cluster " << cluster.clusterId << " matched to box "  <<box->getBoxId()<< std::endl;
-                std::cout << " " << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-                std::cout << " " << std::endl;
             }
         }
+
         matches.emplace_back(cluster, matchedBoxes);
+
+        std::cout << "Cluster  "<< cluster.clusterId  <<" matched to boxes "<<    std::endl;
+        std::cout << " " << std::endl;
+        for (const auto& box : matchedBoxes) {
+            std::cout << "cluster  " << box->getBoxId() <<    std::endl;
+        }
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << " " << std::endl;
     }
     return matches;
 }
@@ -400,20 +413,26 @@ std::vector<std::pair<std::shared_ptr<Box>, std::vector<ClusterInfo>>> TaskManag
     const std::vector<std::shared_ptr<Box>>& trayBoxes,
     const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster) {
     std::vector<std::pair<std::shared_ptr<Box>, std::vector<ClusterInfo>>> matches;
+    std::cout << "BOX TO CLUSTERS " <<    std::endl;
     for (const auto& box : trayBoxes) {
         std::vector<ClusterInfo> matchedClusters;
         for (const auto& cluster : *resultsCluster) {
             if (dimensionsMatch(cluster, *box)) {
                 matchedClusters.push_back(cluster);
-                std::cout << "Box  " <<box->getBoxId() <<" matched to cluster " << cluster.clusterId <<    std::endl;
-                std::cout << " " << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-                std::cout << "------------------------------------" << std::endl;
-                std::cout << " " << std::endl;
+
             }
         }
         matches.emplace_back(box, matchedClusters);
+        std::cout << "Box  " <<box->getBoxId() <<" matched to clusters "<<    std::endl;
+        std::cout << " " << std::endl;
+        for (const auto& cluster : matchedClusters) {
+            std::cout << "cluster  " <<cluster.clusterId <<    std::endl;
+        }
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << "------------------------------------" << std::endl;
+        std::cout << " " << std::endl;
     }
+
     return matches;
 }
 void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vector<ClusterInfo>& matchedBoxes) {
@@ -422,10 +441,17 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
         errorBoxes.push_back(box);
         return;
     }
+    else if(matchedBoxes.size() == 1)
+    {
+        std::cout << "UPDATING POSITION OF A BOX" << std::endl;
+        db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(), matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
+        matchedCluster->push_back(matchedBoxes[0]);
+        return;
+    }
 
     // Remove matched clusters that are already in the list
     auto it = std::remove_if(matchedBoxes.begin(), matchedBoxes.end(), [&](const ClusterInfo& cluster) {
-        return isClusterAlreadyInList(cluster.clusterId, matchedCluster);
+        return isClusterAlreadyInList(cluster.clusterId);
     });
     matchedBoxes.erase(it, matchedBoxes.end());
 
@@ -479,7 +505,7 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
             std::cout << "2D Boxx" << res.label << std::endl;
         }
 
-        if (ret2->size() == 1 && ret2->front().label != box->getBoxId()) {
+        if ( ret2->front().label != box->getBoxId()) {
             it = matchedBoxes.erase(it);
         } else {
             ++it;
@@ -496,6 +522,7 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
 }
 void TaskManager::handleErrorBoxes() {
     //Line sepaarator
+    std::cout << "HANDELING ERROR BOXES" << std::endl;
     std::cout << " " << std::endl;
     std::cout << "------------------------------------" << std::endl;
     std::cout << "------------------------------------" << std::endl;
@@ -505,10 +532,10 @@ void TaskManager::handleErrorBoxes() {
     for (const auto& box : errorBoxes) {
         std::cout << "Error Box: " << box->getBoxId() << std::endl;
     }
-
+    std::cout << "errorLCuster size" << errorClusters->size() << std::endl;
     auto it = errorClusters->begin();
     while (it != errorClusters->end()) {
-
+        std::cout << "HANDELING CLUSTER WITH id "<< it->clusterId << std::endl;
         //Print which cluster is being checked
         std::cout << "Cluster: " << it->clusterId << std::endl;
         std::cout << "x " << it->centroid.x()<< "y " <<  it->centroid.y()  << "z " <<  it->centroid.z()<<std::endl;
@@ -626,16 +653,18 @@ void TaskManager::putZeroLocationBoxesAtBack(std::vector<std::shared_ptr<Box>>& 
 }
 
 
-bool TaskManager::isClusterAlreadyInList(int clusterId, const std::shared_ptr<std::vector<ClusterInfo>>& clusters) {
-    if (!clusters) {
+bool TaskManager::isClusterAlreadyInList(int clusterId) {
+    if (matchedCluster->empty()) {
         return false;
     }
-    for (const auto& cluster : *clusters) {
-        if (cluster.clusterId == clusterId) {
-            return true;
+    else
+    {
+        for (const auto& cluster : *matchedCluster) {
+            if (cluster.clusterId == clusterId) {
+                return true;
+            }
         }
     }
-
     return false;
 }
 
