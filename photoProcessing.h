@@ -42,9 +42,9 @@ public:
         //x1 = std::min(image.cols - 1, x1);
         //y1 = std::min(image.rows - 1, y1);
 
-        int x2 = std::min(image.cols - 1, x1 + width);
-        int y2 = std::min(image.rows - 1, y1 + height);
-
+        int x2 = std::min(image.cols - 1, x1 + (width*2));
+        int y2 = std::min(image.rows - 1, y1 + (height*2));
+std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
         // Crop the image to the bounding box
         cv::Rect roi(x1, y1, x2 - x1, y2 - y1);
         cv::Mat croppedImage = image(roi);

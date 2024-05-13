@@ -4,6 +4,7 @@
 #include "clusters.h"
 #include "database.h"
 #include <QObject>
+#include "detection2D.h"
 #include "qtimer.h"
 #include "task.h"
 #include <memory> // For std::shared_ptr
@@ -16,38 +17,34 @@ class TaskManager : public QObject {
 public:
     explicit TaskManager(std::shared_ptr<Database> db);
     ~TaskManager();
+
     void addTask(int boxId, int trayId, int task);
     void trayDocked();
     void prepTasks(int id);
     void getTasks(int trayId);
 
     std::vector<std::shared_ptr<Task>> queue;
-    std::shared_ptr<Database> db; // Use shared_ptr for Database
+    std::shared_ptr<Database> db;
 
-    // std::shared_ptr<PCL_3D> pcl;
-    //Database db;
     int currentTaskIndex;
     bool preparingNextTask;
     int taskToExecuteIndex;
-    void prepTask(int index);
     QTimer* executionTimer;
 
     float conversionX;
     float conversionY;
     float conversionZ;
-    std::vector<std::shared_ptr<Task>> executingQueue;
+      std::deque<std::shared_ptr<Task>> executingQueue;
     std::vector<std::shared_ptr<Task>> preparedQueue;
 
-    // PhotoProcessor photoProcessing;
     std::shared_ptr<PhotoProcessor> photoProcessing;
-
 
     bool donePreparing;
     int run3DDetectionThread();
     std::vector<std::shared_ptr<Box>> trayBoxes;
     std::vector<std::shared_ptr<Box>> possibleSameSize;
 
-    void findBoxesOfSameSize(const Box& box1);
+
     void update(int trayId);
     bool dimensionsMatch(const ClusterInfo& cluster, const Box& box);
     int tray;
@@ -56,25 +53,25 @@ public:
     Eigen::Vector3f handleNoResults(std::shared_ptr<Task> task);
     bool noResults;
 
-    double distance(double x1, double y1, double z1, double x2, double y2, double z2);
-    bool compareClosestToClusterCenter(const std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>& a,
-                                       const std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>& b);
-
     void deleteClusterById(std::shared_ptr<std::vector<ClusterInfo>> resultsCluster, int id);
     void putZeroLocationBoxesAtBack(std::vector<std::shared_ptr<Box>>& trayBoxes);
     bool isClusterAlreadyInList(int clusterId, const std::shared_ptr<std::vector<ClusterInfo>>& clusters);
     bool compareBoxPtrByID(const std::shared_ptr<Box>& boxPtr1, const std::shared_ptr<Box>& boxPtr2);
-    void sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes) ;
+    void sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes);
+    void sortResultsByDistance(std::shared_ptr<std::vector<ClusterInfo>>& results, const std::shared_ptr<Box>& box);
+
+
+    std::shared_ptr<std::vector<ClusterInfo>> matchedCluster =  std::make_shared<std::vector<ClusterInfo>>();
+    std::shared_ptr<std::vector<ClusterInfo>> errorClusters =  std::make_shared<std::vector<ClusterInfo>>();
 signals:
     void trayDockedUpdate();
     void taskPrepared();
     void taskCompleted();
     void refresh();
     void taskExecutionCompleted();
-     void errorOccurredTask(QString errorMessage , int taskId);
-     void errorOccurredUpdate(QString errorMessage);
-     void updateStatus(const QString& message);
-
+    void errorOccurredTask(QString errorMessage , int taskId);
+    void errorOccurredUpdate(QString errorMessage);
+    void updateStatus(const QString& message);
 
 private slots:
     void executeTasks();
@@ -83,9 +80,34 @@ private slots:
     void preparingDone();
     void onTaskCompleted();
     void onTaskPrepared(std::shared_ptr<Task> task);
-private:
-    bool taskExecuting;
 
+private:
+    std::vector<std::shared_ptr<Box>> errorBoxes;
+    bool taskExecuting;
+    void executeAddBoxTask(const std::shared_ptr<Task>& task);
+    void executeFindBoxTask(const std::shared_ptr<Task>& task);
+    void executeFullTrayScan(const std::shared_ptr<Task>& task);
+    void executePartialTrayScan(const std::shared_ptr<Task>& task, const Eigen::Vector3f& lastPosition);
+    void processBoxDetectionResult(const std::shared_ptr<Task>& task, const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster);
+    void handleSuccessfulBoxFound(const std::shared_ptr<Task>& task, const Eigen::Vector3f& result);
+    void handleFailedBoxDetection(const std::shared_ptr<Task>& task);
+    void removeExecutedTask(const std::shared_ptr<Task>& task);
+
+
+    bool checkForExtraBoxes(const std::vector<std::shared_ptr<Box>>& trayBoxes,
+                            const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster);
+    bool checkForMissingBoxes(const std::vector<std::shared_ptr<Box>>& trayBoxes,
+                              const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster);
+    std::vector<std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>> matchClustersToBoxes(
+        const std::vector<std::shared_ptr<Box>>& trayBoxes,
+        const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster);
+    std::vector<std::pair<std::shared_ptr<Box>, std::vector<ClusterInfo>>> matchBoxesToClusters(
+                                                        const std::vector<std::shared_ptr<Box>>& trayBoxes,
+                                                        const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster);
+    void handleErrorBoxes();
+    void handleOtherErrors(bool error1, bool error2);
+    void handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vector<ClusterInfo>& matchedBoxes);
+    void updateBoxInfo(std::shared_ptr<Box> box, const ClusterInfo& cluster);
 
 };
 

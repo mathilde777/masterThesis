@@ -30,7 +30,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 
     //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
 
-    std::string trayFilePath = "/home/user/windows-share/2024.5.7.13.22.26_Color_PointCloud.ply";
+    std::string trayFilePath = "/home/user/windows-share/emmpty/2024.5.7.13.22.26_Color_PointCloud.ply";
 
     //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
     auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
@@ -73,7 +73,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
         std::cout << "PLY file found" << std::endl;
     }
     //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
-    std::string trayFilePath = "/home/user/windows-share/2024.5.7.13.22.26_Color_PointCloud.ply";
+    std::string trayFilePath = "/home/user/windows-share/empty/2024.5.7.13.22.26_Color_PointCloud.ply";
 
     //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
 
