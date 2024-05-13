@@ -92,8 +92,6 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
 
 }
 
-
-
 /**
 std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matchClusterWithBox(const std::shared_ptr<std::vector<ClusterInfo>>& clusters, const std::shared_ptr<Box>& box) {
     std::shared_ptr<std::vector<std::pair<ClusterInfo, double>>> matches = std::make_shared<std::vector<std::pair<ClusterInfo, double>>>();

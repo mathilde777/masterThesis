@@ -89,6 +89,7 @@ void TaskManager::onTaskCompleted() {
     taskExecuting = false;
 }
 void TaskManager::executeTasks() {
+    noResults = false;
     if (taskExecuting || executingQueue.empty()) {
         return; // Early return if a task is already executing or the queue is empty
     }
@@ -131,13 +132,16 @@ void TaskManager::executeFindBoxTask(const std::shared_ptr<Task>& task) {
 }
 
 void TaskManager::executeFullTrayScan(const std::shared_ptr<Task>& task) {
+    std::cout << "FULL TRAY SCAN " << std::endl;
+
     emit updateStatus(QString("FIND ERROR : box with id %1 has no previous location -> scanning full tray").arg(task->getBoxId()));
     auto resultsCluster = run3DDetection();
     processBoxDetectionResult(task, resultsCluster);
 }
 
 void TaskManager::executePartialTrayScan(const std::shared_ptr<Task>& task, const Eigen::Vector3f& lastPosition) {
-    emit updateStatus(QString("FIND : running 3D").arg(task->getBoxId()));
+     std::cout << "PARTIAL TRAY SCAN " << std::endl;
+    emit updateStatus(QString("FIND : running 3D for %1").arg(task->getBoxId()));
     std::cout << "Last position: " << lastPosition << std::endl;
     auto resultsCluster = ::run3DDetection(lastPosition, task->getBox()->getClusterDimensions());
     processBoxDetectionResult(task, resultsCluster);
@@ -147,11 +151,21 @@ void TaskManager::processBoxDetectionResult(const std::shared_ptr<Task>& task, c
     auto result = match_box(resultsCluster, task);
     std::cout << "Result: " << result << std::endl;
 
-    if (result != Eigen::Vector3f(0.0f, 0.0f, 0.0f)) {
+    if (result != Eigen::Vector3f(0.0f,0.0f,0.0f)) {
         handleSuccessfulBoxFound(task, result);
         removeExecutedTask(task);
     } else {
-        handleFailedBoxDetection(task);
+        if(noResults)
+        {
+            handleFailedBoxDetection(task);
+            removeExecutedTask(task);
+        }
+        else
+
+        {
+            executeFullTrayScan(task);
+        }
+
     }
 }
 
@@ -179,7 +193,7 @@ void TaskManager::removeExecutedTask(const std::shared_ptr<Task>& task) {
 
 
 Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>> results, std::shared_ptr<Task> task)
-{Eigen::Vector3f  result = Eigen::Vector3f();
+{Eigen::Vector3f  result = Eigen::Vector3f(0.0f,0.0f,0.0f);
 
     // Null pointer check
     if (!results || results->empty() || !task) {
@@ -195,12 +209,20 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
 
     switch(results->size()) {
     case 0: {
+        result = Eigen::Vector3f(0.0f,0.0f,0.0f);
+        if(!noResults)
+        {
+            noResults = true;
+        }
+        /**
         if (noResults) {
             std::cerr << "ERROR: Cannot find box." << std::endl;
+            result = Eigen::Vector3f(0.0f,0.0f,0.0f);
         } else {
             result = handleNoResults(task);
         }
         break;
+**/
     }
     case 1: {
         const auto& centroid = results->front().centroid;
@@ -259,11 +281,20 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
                 std::cout << result << std::endl;
             }
         } else {
+            result = Eigen::Vector3f(0.0f,0.0f,0.0f);
+            if(!noResults)
+            {
+                noResults = true;
+            }
+            break;
+            /**
             if (noResults) {
                 std::cerr << "ERROR: Cannot find box." << std::endl;
+                result = Eigen::Vector3f(0.0f,0.0f,0.0f);
             } else {
                 result = handleNoResults(task);
             }
+            **/
         }
         break;
     }
@@ -274,8 +305,9 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
 Eigen::Vector3f TaskManager::handleNoResults(std::shared_ptr<Task> task) {
     noResults = true;
     emit updateStatus("FIND ERROR : no result -> Scanning the whole tray");
-    std::shared_ptr<std::vector<ClusterInfo>> resultsCluster2 = run3DDetection();
-    return match_box(resultsCluster2, task);
+    executeFullTrayScan( task);
+    //std::shared_ptr<std::vector<ClusterInfo>> resultsCluster2 = run3DDetection();
+    //return match_box(resultsCluster2, task);
 }
 int TaskManager::run3DDetectionThread() {
 
@@ -400,7 +432,7 @@ std::vector<std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>> TaskManag
         std::cout << "Cluster  "<< cluster.clusterId  <<" matched to boxes "<<    std::endl;
         std::cout << " " << std::endl;
         for (const auto& box : matchedBoxes) {
-            std::cout << "cluster  " << box->getBoxId() <<    std::endl;
+            std::cout << "box  " << box->getBoxId() <<    std::endl;
         }
         std::cout << "------------------------------------" << std::endl;
         std::cout << "------------------------------------" << std::endl;
@@ -671,7 +703,7 @@ bool TaskManager::isClusterAlreadyInList(int clusterId) {
 bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
     // Define a threshold for matching dimensions
     //std::cout << "DIMENSION MATHCINGr" << std::endl;
-    float threshold = 1.5; // Adjust as needed
+    float threshold = 2; // Adjust as needed
     //auto conversion = 5.64634146;
 
     //Check if the dimensions are zero
@@ -687,7 +719,7 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
         //Case when box is sideways
 
         //Check for the box to have similar dimensions (x and y) to around 10 points
-        if(std::abs(cluster.dimensions.x() - cluster.dimensions.y()) <= 20){
+        if(std::abs(cluster.dimensions.x() - cluster.dimensions.y()) <= 10){
             // The dimensions x and y are similar within a tolerance of 10 points
             if (cluster.dimensions.x() + 30 < cluster.dimensions.z()){
                 conversionY = 8.0f;
@@ -722,9 +754,14 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
         //Case when box is upright
 
         //Check for the box to have similar dimensions (x and y) to around 10 points
-        if (std::abs(cluster.dimensions.x() - cluster.dimensions.y()) <= 20) {
+        if (std::abs(cluster.dimensions.x() - cluster.dimensions.y()) <= 10) {
             // The dimensions x and y are similar within a tolerance of 10 points
-            if(cluster.clusterSize<10000){
+            if(cluster.clusterSize < 7000){
+                conversionX = 7.9f;
+                conversionY = 7.9f;
+                conversionZ = 10.0f;
+            }
+            else if(cluster.clusterSize<10000){
                 conversionX = 7.1f;
                 conversionY = 7.1f;
                 conversionZ = 10.9f;
@@ -734,6 +771,7 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
                 conversionY = 6.75f;
                 conversionZ = 9.99f;
             }
+            std::cout << "Box with similar x and y dimensions and id of cluster " << cluster.clusterId << "." << std::endl;
 
         }
         else{
@@ -757,16 +795,21 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
                 conversionY = 6.70f;
                 conversionZ = 9.99f;
             }
-            else{
+            else if(cluster.clusterSize<18000){
                 conversionX = 8.1f;
                 conversionY = 6.26f;
+                conversionZ = 8.8f;
+            }
+            else{
+                conversionX = 6.2f;
+                conversionY = 6.6f;
                 conversionZ = 8.8f;
             }
 
         }
     }
 
-
+    std::cout << "Converted Dimensions: " << cluster.dimensions.x()/conversionX << " " << cluster.dimensions.y()/conversionY << " " << cluster.dimensions.z()/conversionZ << endl;
     std::vector<std::tuple<double, double, double>> dimensionPairs = {
         {box1.width, box1.height, box1.length},
         {box1.width, box1.length, box1.height},
