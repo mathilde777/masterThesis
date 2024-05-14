@@ -20,42 +20,47 @@ public:
             std::cerr << "Error: Unable to load image " << imagePath << std::endl;
             return ""; // Return empty string indicating failure
         }
-        auto conversion_tolerance = 2.7;
+
+        auto conversion_tolerance = 2.9;
+        auto tolerance = 2.5;
         auto ref_2D_X = 1250;
         auto ref_2D_Y = 930;
 
-        auto converted_x = ref_2D_X - (conversion_tolerance*x);
-        auto converted_y = ref_2D_Y - (conversion_tolerance*y);
+        auto converted_x = ref_2D_X - (conversion_tolerance * x);
+        auto converted_y = ref_2D_Y - (conversion_tolerance * y);
 
         // Calculate the bounding box coordinates
         int x1 = converted_x - width / 2;
         int y1 = converted_y - height / 2;
-        // Calculate the bounding box coordinates
-        //int x1 = std::max(0, static_cast<int>(converted_x) - width / 2);
-        //int y1 = std::max(0, static_cast<int>(converted_y) - height / 2);
-
 
         // Ensure the bounding box is within the image boundaries
         x1 = std::max(0, x1);
         y1 = std::max(0, y1);
 
-        //x1 = std::min(image.cols - 1, x1);
-        //y1 = std::min(image.rows - 1, y1);
+        height = height * tolerance;
+        width = width * tolerance;
 
-        int x2 = std::min(image.cols - 1, x1 + (width*2));
-        int y2 = std::min(image.rows - 1, y1 + (height*2));
-std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
+        int x2 = std::min(image.cols - 1, x1 + (width));
+        int y2 = std::min(image.rows - 1, y1 + (height));
+
+        std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
+        std::cout << "width: " << width << " height: " << height << std::endl;
+
         // Crop the image to the bounding box
         cv::Rect roi(x1, y1, x2 - x1, y2 - y1);
+        if (roi.width <= 0 || roi.height <= 0) {
+            std::cerr << "Error: Invalid bounding box dimensions.\n";
+            return ""; // Return empty string indicating failure
+        }
+
         cv::Mat croppedImage = image(roi);
 
-        // Save the cropped image as JPEG
+
         std::string outputPath = "/home/user/windows-share/temp/cropped_image.jpg";
         cv::imwrite(outputPath, croppedImage);
 
         return outputPath;
     }
-
     // Function to find the latest .ply file in a given directory
     std::optional<std::string> findLatestPlyFile(const std::string& directory) {
         std::optional<std::string> latestFile;

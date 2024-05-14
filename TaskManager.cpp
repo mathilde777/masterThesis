@@ -161,11 +161,9 @@ void TaskManager::processBoxDetectionResult(const std::shared_ptr<Task>& task, c
             removeExecutedTask(task);
         }
         else
-
         {
             executeFullTrayScan(task);
         }
-
     }
 }
 
@@ -242,13 +240,32 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
         sortResultsByDistance(results, task->getBox());
 
         for (auto itn = results->begin(); itn != results->end();) {
+
             auto PNGPath = photoProcessing->findLatestPngFile("/home/userwindows-share");
             if (!PNGPath) {
                 std::cerr << "ERROR: No PNG file found" << std::endl;
                 break;
             }
 
-            photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
+           // photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
+            //Box is sided
+                if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
+                if (it->dimensions.x() > it->dimensions.y()){
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                }
+                else{
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+                }
+            }
+
+            else{
+                if (it->dimensions.x() > it->dimensions.y()){
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                }
+                else{
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+                }
+            }
             auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
             if (!PNGPathCropped) {
                 std::cerr << "ERROR: No cropped PNG file found" << std::endl;
@@ -519,8 +536,25 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
         }
 
         // Integrate Cropping
-        photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+        //photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+        //Box is sided
+            if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
+            if (it->dimensions.x() > it->dimensions.y()){
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+            }
+            else{
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+            }
+        }
 
+        else{
+            if (it->dimensions.x() > it->dimensions.y()){
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+            }
+            else{
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+            }
+        }
         auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
         std::cout << "Crooped Path: " << (PNGPathCropped ? PNGPathCropped->c_str() : "Error: No PNG file found") << std::endl;
 
@@ -699,11 +733,11 @@ bool TaskManager::isClusterAlreadyInList(int clusterId) {
     }
     return false;
 }
-
 bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
     // Define a threshold for matching dimensions
     //std::cout << "DIMENSION MATHCINGr" << std::endl;
-    float threshold = 2; // Adjust as needed
+    float threshold = 1.5; // Adjust as needed
+    float thresholdZ = 1.0;
     //auto conversion = 5.64634146;
 
     //Check if the dimensions are zero
@@ -824,7 +858,7 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
     bool match = false;
     for (const auto& dim1 : dimensionPairs) {
         widthMatch = std::abs(cluster.dimensions.x()/conversionX  - std::get<0>(dim1)) < threshold;
-        heightMatch = std::abs(cluster.dimensions.z()/(conversionZ) - std::get<2>(dim1)) < threshold;
+        heightMatch = std::abs(cluster.dimensions.z()/(conversionZ) - std::get<2>(dim1)) < thresholdZ;
         lengthMatch = std::abs(cluster.dimensions.y()/(conversionY) - std::get<1>(dim1)) < threshold;
         if(widthMatch && lengthMatch && heightMatch)
         {
@@ -832,6 +866,8 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
             std::cout << "Conversion Factors: " << conversionX << " " << conversionY << " " << conversionZ << endl;
             std::cout << "Converted Dimensions: " << cluster.dimensions.x()/conversionX << " " << cluster.dimensions.y()/conversionY << " " << cluster.dimensions.z()/conversionZ << endl;
             std::cout << "Cluster ID: " << cluster.clusterId << " Cluster Size: " << cluster.clusterSize << endl;
+            //locaiton of the cluster
+            std::cout << "Cluster Location: " << cluster.centroid.x() << " " << cluster.centroid.y() << " " << cluster.centroid.z() << std::endl;
             std::cout << "DImension pair " << std::get<0>(dim1) << " : " << std::get<1>(dim1) << " : "  << std::get<2>(dim1) <<  std::endl;
             //std::cout << "Dimensions of cluster: " << cluster.dimensions.x()/conversionX << " " << cluster.dimensions.y()/conversionY << " " << cluster.dimensions.z()/(conversionZ) << endl;
             match = true;
@@ -843,4 +879,3 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
 
     return match;
 }
-
