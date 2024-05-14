@@ -6,6 +6,7 @@
 #include <mysql_driver.h>
 #include <vector>
 #include <QObject>
+#include "knownBox.h"
 
 //change
 
@@ -37,12 +38,12 @@ public:
     int getTrayId(int box_id);
     std::vector<int> getUnstoredBoxes();
     std::vector<std::pair<int, std::string>>  getStoredBoxes();
-    std::vector<std::pair<int, std::string>> getKnownBoxes();
+    std::vector<std::shared_ptr<KnownBox>> getKnownBoxes();
     std::vector<std::shared_ptr<Box>> getAllBoxesInTray(int trayId) ;
     std::shared_ptr<Box> getBox(int tray, int boxId);
     std::tuple<double, double, double> getBoxDimensions(int boxId);
     void updateBox(int id,double last_x, double last_y,double last_z,double cx, double cy,double cz);
-
+    void newKnownBox( std::string name, double width, double height,double  lenght);
 
 public slots:
     void storeBox(int id, int tray);

@@ -16,7 +16,7 @@
 #include <QObject>
 #include <QMetaType>
 
-TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
+TaskManager::TaskManager(std::shared_ptr<Database> db, std::shared_ptr<std::vector<std::shared_ptr<KnownBox> > > knownBoxes) : db(db), knownBoxes(knownBoxes) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
     taskExecuting = false;
     donePreparing = false;
@@ -44,6 +44,18 @@ void TaskManager::prepTasks(int id)
 
     thread->start();
 
+}
+
+int TaskManager::checkFlaggedBoxes(int productId)
+{
+    for(const auto& box: *knownBoxes)
+    {
+        if(box->productId == productId)
+        {
+            return box->trained;
+        }
+   }
+    return 0;
 }
 
 
@@ -129,6 +141,7 @@ void TaskManager::executeFindBoxTask(const std::shared_ptr<Task>& task) {
     } else {
         executePartialTrayScan(task, lastPosition);
     }
+
 }
 
 void TaskManager::executeFullTrayScan(const std::shared_ptr<Task>& task) {

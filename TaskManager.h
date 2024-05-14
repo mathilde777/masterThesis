@@ -15,7 +15,7 @@ class TaskManager : public QObject {
     Q_OBJECT
 
 public:
-    explicit TaskManager(std::shared_ptr<Database> db);
+    explicit TaskManager(std::shared_ptr<Database> db,std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> knownBoxes);
     ~TaskManager();
 
     void addTask(int boxId, int trayId, int task);
@@ -63,6 +63,8 @@ public:
 
     std::shared_ptr<std::vector<ClusterInfo>> matchedCluster =  std::make_shared<std::vector<ClusterInfo>>();
     std::shared_ptr<std::vector<ClusterInfo>> errorClusters =  std::make_shared<std::vector<ClusterInfo>>();
+
+
 signals:
     void trayDockedUpdate();
     void taskPrepared();
@@ -108,7 +110,8 @@ private:
     void handleOtherErrors(bool error1, bool error2);
     void handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vector<ClusterInfo>& matchedBoxes);
     void updateBoxInfo(std::shared_ptr<Box> box, const ClusterInfo& cluster);
-
+    std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> knownBoxes;
+    int checkFlaggedBoxes(int productId);
 };
 
 #endif // TASKMANAGER_H

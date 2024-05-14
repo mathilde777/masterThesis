@@ -47,10 +47,12 @@ set(SOURCES
     box.h
     task.h
     3D_detection.h
+     knownBox.h
 )
 
 # Add an executable target
 add_executable(simulation ${SOURCES}
+
 
 )
 

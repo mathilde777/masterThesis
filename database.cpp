@@ -49,6 +49,20 @@ void Database::addTask(int box_id, int task_type, int tray_id ) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
+void Database::newKnownBox(std::string name, double width, double height,double  lenght)
+{
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL addNewKnownBox(?, ?, ?,?)"));
+        pstmt->setString(1, name);
+        pstmt->setDouble(2, width);
+        pstmt->setDouble(3, height);
+        pstmt->setDouble(4, height);
+        pstmt->execute();
+        std::cout << "new product added to the list: " << name << std::endl;
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+    }
 //std::vector<std::tuple<int, std::string, int, int>>
 std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
     std::vector<std::shared_ptr<Task>> tasks;
@@ -326,8 +340,8 @@ std::vector<int> Database::getUnstoredBoxes() {
 }
 
 // Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
-std::vector<std::pair<int, std::string>> Database::getKnownBoxes() {
-    std::vector<std::pair<int, std::string>> knownBoxes;
+std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
+    std::vector<std::shared_ptr<KnownBox>> knownBoxes;
 
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allKnownBoxes()"));
@@ -339,7 +353,12 @@ std::vector<std::pair<int, std::string>> Database::getKnownBoxes() {
             while (resultSet && resultSet->next()) {
                 int boxId = resultSet->getInt("id");
                 std::string boxName = resultSet->getString("productName");
-                knownBoxes.push_back(std::make_pair(boxId, boxName));
+                int new_box = resultSet->getInt("new_box");
+                int trained = resultSet->getInt("trained");
+
+                  std::shared_ptr<KnownBox> box = std::make_shared<KnownBox>(boxId, boxName, new_box, trained);
+
+                knownBoxes.push_back(box);
             }
         }
 

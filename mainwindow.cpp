@@ -10,8 +10,10 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), dockedTray(0),
     ui(new Ui::MainWindow),
     db(std::make_shared<Database>()),
-    tm(std::make_unique<TaskManager>(db))
+   notStored(std::make_shared<std::vector<std::shared_ptr<KnownBox>>>()),
+    tm(std::make_unique<TaskManager>(db,notStored))
 {
+
     ui->setupUi(this);
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
@@ -110,23 +112,21 @@ MainWindow::MainWindow(QWidget *parent)
     connect(tm.get(), &TaskManager::updateStatus, this, &MainWindow::updateStatusText);
 
     updateButton = new QPushButton("Update", this);
-/
-    // Add the Update button to the layout
     mainLayout->addWidget(updateButton);
-
-    // Connect the clicked signal of the Update button to a slot that contains the update function logic
     connect(updateButton, &QPushButton::clicked, this, &MainWindow::updateButtonClicked);
 
 
     calibration = new QPushButton("Calibrate", this);
-
-    // Add the Update button to the layout
     mainLayout->addWidget(calibration);
+    connect(calibration, &QPushButton::clicked, this, &MainWindow::calibrate);
 
-    // Connect the clicked signal of the Update button to a slot that contains the update function logic
-    connect(updateButton, &QPushButton::clicked, this, &MainWindow::calibrate);
+    addNewBox = new QPushButton("Add new Known Box", this);
+    mainLayout->addWidget(addNewBox);
+    connect(addNewBox, &QPushButton::clicked, this, &MainWindow::newBoxClicked);
 
     populateBoxLists();
+
+
 
 }
 
@@ -142,7 +142,6 @@ void MainWindow::populateBoxLists() {
     addList.clear();
     findList.clear();
     trayList.clear();
-    ;
 
     findComboBox->clear();
     boxComboBox->clear();
@@ -152,9 +151,9 @@ void MainWindow::populateBoxLists() {
     boxComboBox->addItem("");  // Add an empty item to boxComboBox
     trayComboBox->addItem(""); // Add an empty item to trayComboBox
 
-    notStored.clear();
+    //notStored.clear();
     storedBoxes.clear();
-    notStored = db->getKnownBoxes();
+    notStored = std::make_shared<std::vector<std::shared_ptr<KnownBox>>>(db->getKnownBoxes());
     storedBoxes = db->getStoredBoxes();
 
     for (const auto& box :storedBoxes) {
@@ -162,10 +161,16 @@ void MainWindow::populateBoxLists() {
         std::string boxName = box.second;
         findComboBox->addItem(QString("%1 - %2").arg(boxId).arg(QString::fromStdString(boxName)));
     }
-    for (const auto& box : notStored ) {
-        int boxId = box.first;
-        std::string boxName = box.second;
-        boxComboBox->addItem(QString("%1 - %2").arg(boxId).arg(QString::fromStdString(boxName)));
+    for (const auto& box : *notStored ) {
+        if(!(box->trained))
+        {
+             boxComboBox->addItem(QString("%1 - %2 - not trained yet").arg(box->getProductId()).arg(QString::fromStdString(box->getProductName())));
+        }
+        else
+        {
+            boxComboBox->addItem(QString("%1 - %2").arg(box->getProductId()).arg(QString::fromStdString(box->getProductName())));
+        }
+
     }
     for (int trayId = 0; trayId <= 5; ++trayId) {
         trayComboBox->addItem(QString::number(trayId));
@@ -258,9 +263,57 @@ void MainWindow::updateButtonClicked() {
     }
 }
 
+void MainWindow::newBoxClicked()
+{createInputDialog();
+}
 
-void MainWindow::addingNewKnownBox() {
+void MainWindow::createInputDialog()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle("Input Required");
 
+    QFormLayout formLayout(&dialog);
+
+    QLineEdit lineEditWidth;
+    QLineEdit lineEditHeight;
+    QLineEdit lineEditLength;
+    QLineEdit lineEditName;
+
+    formLayout.addRow("Width:", &lineEditWidth);
+    formLayout.addRow("Height:", &lineEditHeight);
+    formLayout.addRow("Length:", &lineEditLength);
+    formLayout.addRow("Name:", &lineEditName);
+
+    QPushButton okButton("OK");
+    QPushButton cancelButton("Cancel");
+
+    formLayout.addRow(&okButton, &cancelButton);
+
+    connect(&okButton, &QPushButton::clicked, [&]() {
+        QString width = lineEditWidth.text();
+        QString height = lineEditHeight.text();
+        QString length = lineEditLength.text();
+        QString name = lineEditName.text();
+
+        dialog.accept();
+        addNewKnownBox(width, height, length, name);
+    });
+
+    connect(&cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    dialog.exec();
+}
+void MainWindow::addNewKnownBox(const QString &width, const QString &height, const QString &length, const QString &name) {
+
+    if (width.isEmpty() || height.isEmpty() || length.isEmpty() || name.isEmpty())
+    {
+        QMessageBox::warning(this, "Input Error", "All fields should have a value.");
+    }
+    else
+    {
+        db->newKnownBox(name.toStdString(), width.toDouble(),height.toDouble(),length.toDouble());
+        populateBoxLists();
+    }
 
 }
 

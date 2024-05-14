@@ -15,6 +15,8 @@
 #include "TaskManager.h"
 #include "database.h"
 #include <QTextEdit>
+#include "knownBox.h"
+#include <QFormLayout>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -36,7 +38,8 @@ private slots:
    void populateBoxLists();
     void updateDockedInfo();
    void updateButtonClicked();
-    void addingNewKnownBox();
+    void newBoxClicked();
+    void addNewKnownBox(const QString &width, const QString &height, const QString &length, const QString &name);
    void calibrate();
 public slots:
    void updateStatusText(const QString& message);
@@ -48,8 +51,8 @@ private:
     std::shared_ptr<Database> db;
     std::unique_ptr<TaskManager> tm;
     std::unique_ptr<Ui::MainWindow> ui;
-    std::vector<std::pair<int, std::string>> knownBoxes;
-    std::vector<std::pair<int, std::string>> notStored;
+    std::vector<std::shared_ptr<KnownBox>> knownBoxes;
+    std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> notStored;
     std::vector<std::pair<int, std::string>> storedBoxes;
     QList<int> addList;
     QList<int> findList;
@@ -78,6 +81,8 @@ private:
      QPushButton *updateButton = nullptr;
      QPushButton *addNewBox = nullptr;
      QPushButton *calibration = nullptr;
+
+     void createInputDialog();
 
 signals:
     void trayDocked();
