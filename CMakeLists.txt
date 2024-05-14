@@ -52,6 +52,8 @@ set(SOURCES
 
 # Add an executable target
 add_executable(simulation ${SOURCES}
+    errorManager.cpp
+    errorManager.h
 
 
 )
