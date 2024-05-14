@@ -124,6 +124,12 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addWidget(addNewBox);
     connect(addNewBox, &QPushButton::clicked, this, &MainWindow::newBoxClicked);
 
+    addTrainingImages = new QPushButton("Add Images for 2D training", this);
+    mainLayout->addWidget(addTrainingImages);
+    connect(addNewBox, &QPushButton::clicked, this, &MainWindow::addImages);
+
+
+
     populateBoxLists();
 
 
@@ -321,7 +327,10 @@ void MainWindow::calibrate() {
 
 
 }
+void MainWindow::addImages()
+{
 
+}
 
 /**
 void MainWindow::handleErrorTask(QString errorMessage, int taskId) {

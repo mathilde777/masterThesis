@@ -41,6 +41,7 @@ private slots:
     void newBoxClicked();
     void addNewKnownBox(const QString &width, const QString &height, const QString &length, const QString &name);
    void calibrate();
+    void addImages();
 public slots:
    void updateStatusText(const QString& message);
    //void handleErrorTask(QString errorMessage, int taskId);
@@ -83,6 +84,8 @@ private:
      QPushButton *calibration = nullptr;
 
      void createInputDialog();
+
+     QPushButton *addTrainingImages = nullptr;
 
 signals:
     void trayDocked();
