@@ -30,7 +30,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 
     //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
 
-    std::string trayFilePath = "/home/user/windows-share/emmpty/2024.5.7.13.22.26_Color_PointCloud.ply";
+    std::string trayFilePath = "/home/user/windows-share/empty/2024.5.14.9.17.50_Color_PointCloud.ply";
 
     //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
     auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
@@ -73,11 +73,11 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
         std::cout << "PLY file found" << std::endl;
     }
     //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
-    std::string trayFilePath = "/home/user/windows-share/empty/2024.5.7.13.22.26_Color_PointCloud.ply";
+    std::string trayFilePath = "/home/user/windows-share/empty/2024.5.14.9.17.50_Color_PointCloud.ply";
 
     //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
 
-    auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
+    auto refPoint = Eigen::Vector3f(458.649, 359, 699.949);
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint);
     for (auto loc : boundingBoxInfo)
     {
@@ -85,7 +85,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
         cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
         cout << "Dimensions: " << loc.dimensions.x()<< " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
         cout << "Cluster Size Algo: " << loc.clusterSize << endl;
-        std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversionX << " " << loc.dimensions.y()/conversionY << " " << loc.dimensions.z()/(conversionZ) << endl;
+        //std::cout << "Converted Dimensions: " << loc.dimensions.x()/conversionX << " " << loc.dimensions.y()/conversionY << " " << loc.dimensions.z()/(conversionZ) << endl;
         cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
     }
     return std::make_shared<std::vector<ClusterInfo>>(boundingBoxInfo);

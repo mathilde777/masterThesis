@@ -36,6 +36,8 @@ private slots:
    void populateBoxLists();
     void updateDockedInfo();
    void updateButtonClicked();
+    void addingNewKnownBox();
+   void calibrate();
 public slots:
    void updateStatusText(const QString& message);
    //void handleErrorTask(QString errorMessage, int taskId);
@@ -74,6 +76,8 @@ private:
     QLabel *dockedInfoLabel;
     QTextEdit *statusText;
      QPushButton *updateButton = nullptr;
+     QPushButton *addNewBox = nullptr;
+     QPushButton *calibration = nullptr;
 
 signals:
     void trayDocked();

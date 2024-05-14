@@ -20,7 +20,6 @@ public:
     Box(int id, int boxId, int trayId, double x, double y, double z, double w, double h, double l)
         : id(id), boxId(boxId), trayId(trayId), last_x(x), last_y(y), last_z(z), width(w), height(h), length(l) {}
 
-    // Setters
     void setId(int id) { this->id = id; }
     void setBoxId(int boxId) { this->boxId = boxId; }
     void setTrayId(int trayId) { this->trayId = trayId; }
@@ -32,7 +31,7 @@ public:
     void setLength(double length) { this->length = length; }
     void setCluster(Eigen::Vector3f cluster){ this->clusterDimensions = cluster; }
 
-    // Getters
+
     int getId() const { return id; }
     int getBoxId() const { return boxId; }
     int getTrayId() const { return trayId; }

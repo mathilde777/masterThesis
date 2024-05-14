@@ -110,12 +110,21 @@ MainWindow::MainWindow(QWidget *parent)
     connect(tm.get(), &TaskManager::updateStatus, this, &MainWindow::updateStatusText);
 
     updateButton = new QPushButton("Update", this);
-
+/
     // Add the Update button to the layout
     mainLayout->addWidget(updateButton);
 
     // Connect the clicked signal of the Update button to a slot that contains the update function logic
     connect(updateButton, &QPushButton::clicked, this, &MainWindow::updateButtonClicked);
+
+
+    calibration = new QPushButton("Calibrate", this);
+
+    // Add the Update button to the layout
+    mainLayout->addWidget(calibration);
+
+    // Connect the clicked signal of the Update button to a slot that contains the update function logic
+    connect(updateButton, &QPushButton::clicked, this, &MainWindow::calibrate);
 
     populateBoxLists();
 
@@ -248,6 +257,18 @@ void MainWindow::updateButtonClicked() {
           QMessageBox::warning(this, "Error", "No tray docked");
     }
 }
+
+
+void MainWindow::addingNewKnownBox() {
+
+
+}
+
+void MainWindow::calibrate() {
+
+
+}
+
 
 /**
 void MainWindow::handleErrorTask(QString errorMessage, int taskId) {

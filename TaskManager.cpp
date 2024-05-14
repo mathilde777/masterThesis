@@ -249,7 +249,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
 
            // photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
             //Box is sided
-                if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
+            if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
                 if (it->dimensions.x() > it->dimensions.y()){
                     photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
                 }
@@ -266,6 +266,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
                     photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
                 }
             }
+
             auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
             if (!PNGPathCropped) {
                 std::cerr << "ERROR: No cropped PNG file found" << std::endl;
@@ -371,6 +372,7 @@ void TaskManager::update(int id) {
     sortTrayBoxesByID(trayBoxes);
     matchedCluster->clear();
     errorClusters->clear();
+    errorBoxes.clear();
     std::cout << "Number of boxes in tray: " << trayBoxes.size() << std::endl;
     putZeroLocationBoxesAtBack(trayBoxes);
 
@@ -490,13 +492,13 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
         errorBoxes.push_back(box);
         return;
     }
-    else if(matchedBoxes.size() == 1)
-    {
-        std::cout << "UPDATING POSITION OF A BOX" << std::endl;
-        db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(), matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
-        matchedCluster->push_back(matchedBoxes[0]);
-        return;
-    }
+    // else if(matchedBoxes.size() == 1)
+    // {
+    //     std::cout << "UPDATING POSITION OF A BOX" << std::endl;
+    //     db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(), matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
+    //     matchedCluster->push_back(matchedBoxes[0]);
+    //     return;
+    // }
 
     // Remove matched clusters that are already in the list
     auto it = std::remove_if(matchedBoxes.begin(), matchedBoxes.end(), [&](const ClusterInfo& cluster) {
@@ -535,10 +537,9 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
             break;
         }
 
-        // Integrate Cropping
-        //photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+
         //Box is sided
-            if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
+        if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
             if (it->dimensions.x() > it->dimensions.y()){
                 photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
             }
@@ -549,12 +550,14 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
 
         else{
             if (it->dimensions.x() > it->dimensions.y()){
-                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
-            }
-            else{
                 photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
             }
+            else{
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+            }
         }
+
+
         auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
         std::cout << "Crooped Path: " << (PNGPathCropped ? PNGPathCropped->c_str() : "Error: No PNG file found") << std::endl;
 
@@ -796,9 +799,9 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
                 conversionZ = 10.0f;
             }
             else if(cluster.clusterSize<10000){
-                conversionX = 7.1f;
-                conversionY = 7.1f;
-                conversionZ = 10.9f;
+                conversionX = 7.45f;
+                conversionY = 7.5f;
+                conversionZ = 9.2f;
             }
             else{
                 conversionX = 6.75f;
@@ -809,9 +812,14 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
 
         }
         else{
-            if(cluster.clusterSize<5000){
-                conversionX = 4.21f;
-                conversionY = 4.8f;
+            if (cluster.clusterSize < 3000){
+                conversionX = 5.5f;
+                conversionY = 6.87;
+                conversionZ = 8.2f;
+            }
+            else if(cluster.clusterSize<5000){
+                conversionX = 6.21f;
+                conversionY = 6.8f;
                 conversionZ = 10.0f;
             }
             else if(cluster.clusterSize<10000){
