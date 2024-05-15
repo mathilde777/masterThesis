@@ -10,7 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), dockedTray(0),
     ui(new Ui::MainWindow),
     db(std::make_shared<Database>()),
-   notStored(std::make_shared<std::vector<std::shared_ptr<KnownBox>>>()),
+   //notStored(std::make_shared<std::vector<std::shared_ptr<KnownBox>>>()),
     tm(std::make_unique<TaskManager>(db,notStored))
 {
 
@@ -159,7 +159,7 @@ void MainWindow::populateBoxLists() {
 
     //notStored.clear();
     storedBoxes.clear();
-    notStored = std::make_shared<std::vector<std::shared_ptr<KnownBox>>>(db->getKnownBoxes());
+    notStored = db->getKnownBoxes();
     storedBoxes = db->getStoredBoxes();
 
     for (const auto& box :storedBoxes) {
@@ -206,7 +206,7 @@ void MainWindow::addButtonClicked()
 {
     QString idText = boxComboBox->currentText();
     QStringList parts = idText.split(" - "); // Split the text using the delimiter "-"
-    if (parts.size() == 2) {
+  //  if (parts.size() == 2) {
         QString idStr = parts[0]; // Extract the first part which should be the ID
         int id = idStr.toInt(); // Convert the ID string to an integer
 
@@ -228,9 +228,9 @@ void MainWindow::addButtonClicked()
             db->addTask(id, 1, tray.toInt());
             std::cout << "Adding task " << id << " to tray " << tray.toInt() << std::endl;
         }
-    } else {
-        QMessageBox::warning(this, "Error", "Invalid selection");
-    }
+ //   } else {
+    //    QMessageBox::warning(this, "Error", "Invalid selection");
+   // }
 
 }
 

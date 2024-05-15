@@ -53,7 +53,7 @@ private:
     std::unique_ptr<TaskManager> tm;
     std::unique_ptr<Ui::MainWindow> ui;
     std::vector<std::shared_ptr<KnownBox>> knownBoxes;
-    std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> notStored;
+    std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> notStored = std::make_shared<std::vector<std::shared_ptr<KnownBox>>>();
     std::vector<std::pair<int, std::string>> storedBoxes;
     QList<int> addList;
     QList<int> findList;

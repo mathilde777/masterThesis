@@ -230,7 +230,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
 
         auto itn = results->begin();
         const auto& centroid = itn->centroid;
-            auto PNGPath = photoProcessing->findLatestPngFile("/home/userwindows-share");
+            auto PNGPath = photoProcessing->findLatestPngFile("/home/user/windows-share");
             if (!PNGPath) {
                 std::cerr << "ERROR: No PNG file found" << std::endl;
                 break;
@@ -309,7 +309,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
 
         for (auto itn = results->begin(); itn != results->end();) {
 
-            auto PNGPath = photoProcessing->findLatestPngFile("/home/userwindows-share");
+            auto PNGPath = photoProcessing->findLatestPngFile("/home/user/windows-share");
             if (!PNGPath) {
                 std::cerr << "ERROR: No PNG file found" << std::endl;
                 break;
@@ -563,181 +563,178 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
         errorBoxes.push_back(box);
         return;
     }
-    else if(matchedBoxes.size() == 1)
-    {
-
+    else if (matchedBoxes.size() == 1) {
         std::cout << "UPDATING POSITION OF A BOX" << std::endl;
         auto it = matchedBoxes.begin();
-        if(isClusterAlreadyInList(it->clusterId))
-        {
-           errorBoxes.push_back(box);
+
+        if (isClusterAlreadyInList(it->clusterId)) {
+            errorBoxes.push_back(box);
             return;
         }
 
         auto directory = "/home/user/windows-share";
         auto PNGPath = photoProcessing->findLatestPngFile(directory);
-        std::cout << "Path: " << (PNGPath ? PNGPath->c_str() : "Error: No PNG file found") << std::endl;
-
         if (!PNGPath) {
             std::cout << "Error: No PNG file found" << std::endl;
-
+            return; // Return early if no PNG file is found
         }
-       //Box is sided
-        if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
-            if (it->dimensions.x() > it->dimensions.y()){
+        std::cout << "Path: " << PNGPath->c_str() << std::endl;
+
+        // Check box dimensions and crop accordingly
+        if (it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()) {
+            if (it->dimensions.x() > it->dimensions.y()) {
                 photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
-            }
-            else{
+            } else {
                 photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
             }
-        }
-
-        else{
-            if (it->dimensions.x() > it->dimensions.y()){
+        } else {
+            if (it->dimensions.x() > it->dimensions.y()) {
                 photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
-            }
-            else{
+            } else {
                 photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
             }
         }
-
 
         auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
-        std::cout << "Crooped Path: " << (PNGPathCropped ? PNGPathCropped->c_str() : "Error: No PNG file found") << std::endl;
-
         if (!PNGPathCropped) {
-            std::cout << "Error: No PNG file found" << std::endl;
-
-        } else {
-            std::cout << "Looking for box with id " << box->getBoxId() << std::endl;
+            std::cout << "Error: No cropped PNG file found" << std::endl;
+            return; // Return early if no cropped PNG file is found
         }
+        std::cout << "Cropped Path: " << PNGPathCropped->c_str() << std::endl;
+
+        std::cout << "Looking for box with id " << box->getBoxId() << std::endl;
 
         // Check with 2D
-
         std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPathCropped->c_str(), 1);
+        if (!ret2 || ret2->empty()) {
+            std::cout << "Error: run2D returned null or empty results" << std::endl;
+            return; // Return early if run2D fails
+        }
 
-        if(checkFlaggedBoxes(box->getBoxId()))
-        {
+        if (checkFlaggedBoxes(box->getBoxId())) {
             for (const auto& res : *ret2) {
-                std::cout << "2D Boxx" << res.label << std::endl;
+                std::cout << "2D Box: " << res.label << std::endl;
             }
 
-            if ( ret2->front().label != box->getBoxId()) {
-                return;
-            }
-            else {
-
-                db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(), matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
+            if (ret2->front().label != box->getBoxId()) {
+                return; // Return early if the label does not match
+            } else {
+                db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(),
+                              matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
                 matchedCluster->push_back(matchedBoxes[0]);
                 return;
             }
+        } else {
+            // Save image or perform other operations
+            db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(),
+                          matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
+            matchedCluster->push_back(matchedBoxes[0]);
+            return;
         }
-        else
-        {
-            ///save image????
+    }
+
+    else
+
+    {
+        // Remove matched clusters that are already in the list
+        auto it = std::remove_if(matchedBoxes.begin(), matchedBoxes.end(), [&](const ClusterInfo& cluster) {
+            return isClusterAlreadyInList(cluster.clusterId);
+        });
+        matchedBoxes.erase(it, matchedBoxes.end());
+
+        // Sort matched clusters based on distance
+        std::sort(matchedBoxes.begin(), matchedBoxes.end(), [&](const ClusterInfo& a, const ClusterInfo& b) {
+            return sortByDistance(a, b, box);
+        });
+
+        // Sort results by distance
+        sortResultsByDistance(matchedCluster, box);
+
+        std::cout << "BOX x " << box->getLastX() << " y " << box->getLastY() << " z " << box->getLastZ() << std::endl;
+        for (const auto& cluster : matchedBoxes) {
+            std::cout << "Cluster x " << cluster.centroid.x() << " y " << cluster.centroid.y() << " z " << cluster.centroid.z() << std::endl;
+        }
+
+        for (auto it = matchedBoxes.begin(); it != matchedBoxes.end(); ) {
+            std::cout << std::endl;
+            std::cout << "------------------------------------" << std::endl;
+            std::cout << "------------------------------------" << std::endl;
+            std::cout << std::endl;
+            std::cout << "Cluster: " << it->clusterId << std::endl;
+            std::cout << "Cluster: x " << it->centroid.x() << " y " << it->centroid.y() << " z " << it->centroid.z() << std::endl;
+
+            // Get latest png from PhotoProcessing
+            auto directory = "/home/user/windows-share";
+            auto PNGPath = photoProcessing->findLatestPngFile(directory);
+            std::cout << "Path: " << (PNGPath ? PNGPath->c_str() : "Error: No PNG file found") << std::endl;
+
+            if (!PNGPath) {
+                std::cout << "Error: No PNG file found" << std::endl;
+                break;
+            }
+
+
+            //Box is sided
+            if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
+                if (it->dimensions.x() > it->dimensions.y()){
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                }
+                else{
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+                }
+            }
+
+            else{
+                if (it->dimensions.x() > it->dimensions.y()){
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+                }
+                else{
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                }
+            }
+
+
+            auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
+            std::cout << "Crooped Path: " << (PNGPathCropped ? PNGPathCropped->c_str() : "Error: No PNG file found") << std::endl;
+
+            if (!PNGPathCropped) {
+                std::cout << "Error: No PNG file found" << std::endl;
+                break;
+            } else {
+                std::cout << "Looking for box with id " << box->getBoxId() << std::endl;
+            }
+
+            // Check with 2D
+
+            std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPathCropped->c_str(), 1);
+
+            if(checkFlaggedBoxes(box->getBoxId()))
+            {
+                for (const auto& res : *ret2) {
+                    std::cout << "2D Boxx" << res.label << std::endl;
+                }
+
+                if ( ret2->front().label != box->getBoxId()) {
+                    it = matchedBoxes.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+
+        }
+
+        if (matchedBoxes.empty()) {
+            std::cout << "ERROR: UNRECOGNIZABLE BOX - NO MATCHING AFTER SORTING" << std::endl;
+            errorBoxes.push_back(box);
+            return;
+        } else {
             db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(), matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
             matchedCluster->push_back(matchedBoxes[0]);
             return;
         }
-
-     }
-
-    // Remove matched clusters that are already in the list
-    auto it = std::remove_if(matchedBoxes.begin(), matchedBoxes.end(), [&](const ClusterInfo& cluster) {
-        return isClusterAlreadyInList(cluster.clusterId);
-    });
-    matchedBoxes.erase(it, matchedBoxes.end());
-
-    // Sort matched clusters based on distance
-    std::sort(matchedBoxes.begin(), matchedBoxes.end(), [&](const ClusterInfo& a, const ClusterInfo& b) {
-        return sortByDistance(a, b, box);
-    });
-
-    // Sort results by distance
-    sortResultsByDistance(matchedCluster, box);
-
-    std::cout << "BOX x " << box->getLastX() << " y " << box->getLastY() << " z " << box->getLastZ() << std::endl;
-    for (const auto& cluster : matchedBoxes) {
-        std::cout << "Cluster x " << cluster.centroid.x() << " y " << cluster.centroid.y() << " z " << cluster.centroid.z() << std::endl;
     }
 
-    for (auto it = matchedBoxes.begin(); it != matchedBoxes.end(); ) {
-        std::cout << std::endl;
-        std::cout << "------------------------------------" << std::endl;
-        std::cout << "------------------------------------" << std::endl;
-        std::cout << std::endl;
-        std::cout << "Cluster: " << it->clusterId << std::endl;
-        std::cout << "Cluster: x " << it->centroid.x() << " y " << it->centroid.y() << " z " << it->centroid.z() << std::endl;
 
-        // Get latest png from PhotoProcessing
-        auto directory = "/home/user/windows-share";
-        auto PNGPath = photoProcessing->findLatestPngFile(directory);
-        std::cout << "Path: " << (PNGPath ? PNGPath->c_str() : "Error: No PNG file found") << std::endl;
-
-        if (!PNGPath) {
-            std::cout << "Error: No PNG file found" << std::endl;
-            break;
-        }
-
-
-        //Box is sided
-        if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
-            if (it->dimensions.x() > it->dimensions.y()){
-                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
-            }
-            else{
-                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
-            }
-        }
-
-        else{
-            if (it->dimensions.x() > it->dimensions.y()){
-                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
-            }
-            else{
-                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
-            }
-        }
-
-
-        auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
-        std::cout << "Crooped Path: " << (PNGPathCropped ? PNGPathCropped->c_str() : "Error: No PNG file found") << std::endl;
-
-        if (!PNGPathCropped) {
-            std::cout << "Error: No PNG file found" << std::endl;
-            break;
-        } else {
-            std::cout << "Looking for box with id " << box->getBoxId() << std::endl;
-        }
-
-        // Check with 2D
-
-        std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPathCropped->c_str(), 1);
-
-        if(checkFlaggedBoxes(box->getBoxId()))
-        {
-            for (const auto& res : *ret2) {
-                std::cout << "2D Boxx" << res.label << std::endl;
-            }
-
-            if ( ret2->front().label != box->getBoxId()) {
-                it = matchedBoxes.erase(it);
-            } else {
-                ++it;
-            }
-        }
-
-    }
-
-    if (matchedBoxes.empty()) {
-        std::cout << "ERROR: UNRECOGNIZABLE BOX - NO MATCHING AFTER SORTING" << std::endl;
-        errorBoxes.push_back(box);
-        return;
-    } else {
-        db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(), matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
-        matchedCluster->push_back(matchedBoxes[0]);
-        return;
-    }
 }
 void TaskManager::handleErrorBoxes() {
     //Line sepaarator

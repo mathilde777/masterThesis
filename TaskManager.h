@@ -53,8 +53,8 @@ public:
 
     std::shared_ptr<std::vector<ClusterInfo>> matchedCluster =  std::make_shared<std::vector<ClusterInfo>>();
     std::shared_ptr<std::vector<ClusterInfo>> errorClusters =  std::make_shared<std::vector<ClusterInfo>>();
-
-      void update(int trayId);
+     std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> knownBoxes;
+     void update(int trayId);
 signals:
     void trayDockedUpdate();
     void taskPrepared(); //this indicates that a task is prepared and to add it to the queue
@@ -117,7 +117,7 @@ private:
     void handleOtherErrors(bool error1, bool error2);
     void handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vector<ClusterInfo>& matchedBoxes);
     void updateBoxInfo(std::shared_ptr<Box> box, const ClusterInfo& cluster);
-    std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> knownBoxes;
+
     int checkFlaggedBoxes(int productId);
 };
 
