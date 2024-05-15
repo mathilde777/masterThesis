@@ -18,13 +18,20 @@ public:
     explicit TaskManager(std::shared_ptr<Database> db,std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> knownBoxes);
     ~TaskManager();
 
+    std::vector<std::shared_ptr<Task>> queue;
+    std::shared_ptr<Database> db;
+
+    //Task functions
     void addTask(int boxId, int trayId, int task);
-    void trayDocked();
+
     void prepTasks(int id);
     void getTasks(int trayId);
 
-    std::vector<std::shared_ptr<Task>> queue;
-    std::shared_ptr<Database> db;
+    //Tray control
+    void trayDocked();
+
+
+
 
     int currentTaskIndex;
     bool preparingNextTask;
@@ -34,15 +41,39 @@ public:
     float conversionX;
     float conversionY;
     float conversionZ;
-      std::deque<std::shared_ptr<Task>> executingQueue;
+    std::deque<std::shared_ptr<Task>> executingQueue;
     std::vector<std::shared_ptr<Task>> preparedQueue;
-
     std::shared_ptr<PhotoProcessor> photoProcessing;
 
     bool donePreparing;
     int run3DDetectionThread();
     std::vector<std::shared_ptr<Box>> trayBoxes;
     std::vector<std::shared_ptr<Box>> possibleSameSize;
+
+
+    std::shared_ptr<std::vector<ClusterInfo>> matchedCluster =  std::make_shared<std::vector<ClusterInfo>>();
+    std::shared_ptr<std::vector<ClusterInfo>> errorClusters =  std::make_shared<std::vector<ClusterInfo>>();
+
+
+signals:
+    void trayDockedUpdate();
+    void taskPrepared(); //this indicates that a task is prepared and to add it to the queue
+    void taskCompleted();
+    void refresh();
+    void taskExecutionCompleted();
+    void errorOccurredTask(QString errorMessage , int taskId);
+    void errorOccurredUpdate(QString errorMessage);
+    void updateStatus(const QString& message);
+
+private slots:
+    void executeTasks();
+    void waitForTasks();
+    void startExecutionLoop();
+    void preparingDone();
+    void onTaskCompleted();
+    void onTaskPrepared(std::shared_ptr<Task> task);
+
+private:
 
 
     void update(int trayId);
@@ -60,30 +91,6 @@ public:
     void sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes);
     void sortResultsByDistance(std::shared_ptr<std::vector<ClusterInfo>>& results, const std::shared_ptr<Box>& box);
 
-
-    std::shared_ptr<std::vector<ClusterInfo>> matchedCluster =  std::make_shared<std::vector<ClusterInfo>>();
-    std::shared_ptr<std::vector<ClusterInfo>> errorClusters =  std::make_shared<std::vector<ClusterInfo>>();
-
-
-signals:
-    void trayDockedUpdate();
-    void taskPrepared();
-    void taskCompleted();
-    void refresh();
-    void taskExecutionCompleted();
-    void errorOccurredTask(QString errorMessage , int taskId);
-    void errorOccurredUpdate(QString errorMessage);
-    void updateStatus(const QString& message);
-
-private slots:
-    void executeTasks();
-    void waitForTasks();
-    void startExecutionLoop();
-    void preparingDone();
-    void onTaskCompleted();
-    void onTaskPrepared(std::shared_ptr<Task> task);
-
-private:
     std::vector<std::shared_ptr<Box>> errorBoxes;
     bool taskExecuting;
     void executeAddBoxTask(const std::shared_ptr<Task>& task);

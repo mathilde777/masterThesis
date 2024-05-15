@@ -48,12 +48,14 @@ set(SOURCES
     task.h
     3D_detection.h
      knownBox.h
+
+     errorManager.cpp
+     errorManager.h
 )
 
 # Add an executable target
 add_executable(simulation ${SOURCES}
-    errorManager.cpp
-    errorManager.h
+
 
 
 )
