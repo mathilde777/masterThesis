@@ -453,7 +453,8 @@ void TaskManager::update(int id) {
     std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = resultFuture.get();
 
     // Error checking
-    +
+    bool error1 = checkForExtraBoxes(trayBoxes, resultsCluster);
+    bool error2 = checkForMissingBoxes(trayBoxes, resultsCluster);
 
     // Matching clusters to boxes
     std::vector<std::pair<ClusterInfo, std::vector<std::shared_ptr<Box>>>> matches = matchClustersToBoxes(trayBoxes, resultsCluster);

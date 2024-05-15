@@ -54,7 +54,7 @@ public:
     std::shared_ptr<std::vector<ClusterInfo>> matchedCluster =  std::make_shared<std::vector<ClusterInfo>>();
     std::shared_ptr<std::vector<ClusterInfo>> errorClusters =  std::make_shared<std::vector<ClusterInfo>>();
 
-
+      void update(int trayId);
 signals:
     void trayDockedUpdate();
     void taskPrepared(); //this indicates that a task is prepared and to add it to the queue
@@ -76,7 +76,7 @@ private slots:
 private:
 
 
-    void update(int trayId);
+
     bool dimensionsMatch(const ClusterInfo& cluster, const Box& box);
     int tray;
 
