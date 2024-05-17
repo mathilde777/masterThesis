@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui(new Ui::MainWindow),
     db(std::make_shared<Database>()),
    //notStored(std::make_shared<std::vector<std::shared_ptr<KnownBox>>>()),
-    tm(std::make_unique<TaskManager>(db,notStored))
+    tm(std::make_unique<TaskManager>(db))
 {
 
     ui->setupUi(this);
@@ -167,7 +167,7 @@ void MainWindow::populateBoxLists() {
         std::string boxName = box.second;
         findComboBox->addItem(QString("%1 - %2").arg(boxId).arg(QString::fromStdString(boxName)));
     }
-    for (const auto& box : *notStored ) {
+    for (const auto& box : notStored ) {
         if(!(box->trained))
         {
              boxComboBox->addItem(QString("%1 - %2 - not trained yet").arg(box->getProductId()).arg(QString::fromStdString(box->getProductName())));
@@ -319,6 +319,7 @@ void MainWindow::addNewKnownBox(const QString &width, const QString &height, con
     {
         db->newKnownBox(name.toStdString(), width.toDouble(),height.toDouble(),length.toDouble());
         populateBoxLists();
+        tm->updateKnownBoxes();
     }
 
 }

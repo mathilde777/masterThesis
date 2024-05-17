@@ -16,17 +16,22 @@
 #include <QObject>
 #include <QMetaType>
 
-TaskManager::TaskManager(std::shared_ptr<Database> db, std::shared_ptr<std::vector<std::shared_ptr<KnownBox> > > knownBoxes) : db(db), knownBoxes(knownBoxes) {
+TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
     taskExecuting = false;
     donePreparing = false;
+    knownBoxes = db->getKnownBoxes();
 }
+
 
 TaskManager::~TaskManager() {
     disconnect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
 }
 
-
+void TaskManager::updateKnownBoxes()
+{
+     knownBoxes = db->getKnownBoxes();
+}
 void TaskManager::prepTasks(int id)
 {
     std::cout << "about to make the tasks"<< std::endl;
@@ -46,16 +51,27 @@ void TaskManager::prepTasks(int id)
 
 }
 
-int TaskManager::checkFlaggedBoxes(int productId)
+bool TaskManager::checkFlaggedBoxes(int productId)
 {
-    for(const auto& box: *knownBoxes)
+    for(const auto& box: knownBoxes)
     {
         if(box->productId == productId)
         {
-            return box->trained;
+            std::cout << "box trained "<< box->trained << std::endl;
+            if( box->trained == 1)
+            {
+                return true;
+            }
+
+            else
+            {
+                return false;
+
+            }
+
         }
    }
-    return 0;
+    return false;
 }
 
 
@@ -265,7 +281,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
             std::cout << "Looking for box with type ID: " << task->getBox()->getBoxId() << std::endl;
             std::shared_ptr<std::vector<DetectionResult>> res2D = run2D(PNGPathCropped->c_str(), 1);
             if(checkFlaggedBoxes(task->getBox()->getBoxId()))
-            {
+           {
                 if (!res2D->empty()) {
                     if (res2D->front().label != task->getBox()->getBoxId()) {
 
@@ -282,13 +298,14 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
                 else {
                     break;
                 }
-            }
-            else
+          }
+           else
 
-            {
-                 std::cout << "NOT TRAINED BOX IN FIND:" << task->getBox()->getBoxId() << std::endl;
+             {
+                std::cout << "NOT TRAINED BOX IN FIND:" << task->getBox()->getBoxId() << std::endl;
                 //save image
-                if (centroid.size() >= 3) {
+               photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),task->getBox()->getBoxId());
+                 if (centroid.size() >= 3) {
                     result << centroid(0), centroid(1), centroid(2);
                 } else {
                     std::cerr << "ERROR: Invalid centroid data." << std::endl;
@@ -361,6 +378,7 @@ Eigen::Vector3f  TaskManager::match_box(std::shared_ptr<std::vector<ClusterInfo>
 
             {
                 //save image
+                photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),task->getBox()->getBoxId());
                 //no need to do anyhting else, we jsut take the first value
             }
 
@@ -617,6 +635,9 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
             }
 
             if (ret2->front().label != box->getBoxId()) {
+                db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(),
+                              matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
+                matchedCluster->push_back(matchedBoxes[0]);
                 return; // Return early if the label does not match
             } else {
                 db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(),
@@ -625,12 +646,13 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
                 return;
             }
         } else {
-            // Save image or perform other operations
-            db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(),
-                          matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
-            matchedCluster->push_back(matchedBoxes[0]);
+             // Save image or perform other operations
+             db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(),
+                           matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
+             matchedCluster->push_back(matchedBoxes[0]);
+             photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),box->getBoxId());
             return;
-        }
+         }
     }
 
     else
@@ -709,7 +731,7 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
             std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPathCropped->c_str(), 1);
 
             if(checkFlaggedBoxes(box->getBoxId()))
-            {
+           {
                 for (const auto& res : *ret2) {
                     std::cout << "2D Boxx" << res.label << std::endl;
                 }
@@ -719,6 +741,12 @@ void TaskManager::handleMatchedBoxes(const std::shared_ptr<Box>& box, std::vecto
                 } else {
                     ++it;
                 }
+            }
+            else
+
+            {
+              std::cout << "NOT TRAINED - SAVE IMAGE" << std::endl;
+               photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),box->getBoxId());
             }
 
         }
@@ -798,6 +826,7 @@ void TaskManager::handleErrorBoxes() {
 
         std::vector<std::shared_ptr<Box>> idk;
 
+
         if (ret2->size() == 1) {
             std::cout << "size of Error Boxes: " << errorBoxes.size() << std::endl;
 
@@ -827,6 +856,11 @@ void TaskManager::handleErrorBoxes() {
 
         }
 
+
+
+
+
+
         if (!idk.empty()) {
             std::cout << "UPDATE!" << errorBoxes.size() << std::endl;
             db->updateBox((*idk.begin())->getId(), it->centroid.x(), it->centroid.y(), it->centroid.z(), it->dimensions.x(), it->dimensions.y(), it->dimensions.z());
@@ -843,6 +877,52 @@ void TaskManager::handleErrorBoxes() {
         }
 
 }
+
+ if(errorClusters->size() == 1 && errorBoxes.size() == 1)
+        {
+    std::cout << "UPDATE!" << errorBoxes.size() << std::endl;
+            db->updateBox((*errorBoxes.begin())->getId(), errorClusters->begin()->centroid.x(), errorClusters->begin()->centroid.y(), errorClusters->begin()->centroid.z(), errorClusters->begin()->dimensions.x(), errorClusters->begin()->dimensions.y(), errorClusters->begin()->dimensions.z());
+    matchedCluster->push_back(*it);
+
+
+    //Get latest png from PhotoProcessing
+    auto directory = "/home/user/windows-share";
+    auto PNGPath = photoProcessing->findLatestPngFile(directory);
+    std::cout << "Path: " << PNGPath->c_str() << std::endl;
+
+    //check if Path is correct, return string if not correct ==> Error
+    if (!PNGPath) {
+        std::cout << "Error: No PNG file found" << std::endl;
+
+    }
+    //Integrate Cropping
+    //Box is sided
+    if(  errorClusters->begin()->dimensions.x() <  errorClusters->begin()->dimensions.z() ||  errorClusters->begin()->dimensions.y() <  errorClusters->begin()->dimensions.z()){
+        photoProcessing->cropToBox(PNGPath->c_str(),  errorClusters->begin()->centroid.x(),  errorClusters->begin()->centroid.y(),  errorClusters->begin()->dimensions.y(),  errorClusters->begin()->dimensions.x());
+    }
+    else{
+        photoProcessing->cropToBox(PNGPath->c_str(),  errorClusters->begin()->centroid.x(),  errorClusters->begin()->centroid.y(),  errorClusters->begin()->dimensions.x(),  errorClusters->begin()->dimensions.y());
+    }
+
+    auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
+    std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
+
+    //check if Path is correct, return string if not correct ==> Error
+    if (!PNGPathCropped) {
+        std::cout << "Error: No PNG file found" << std::endl;
+        ;
+    }
+    else {
+        //std::cout << "Looking for box with id " << std::endl;
+    }
+
+    std::cout << "NOT TRAINED - SAVE IMAGE" << std::endl;
+    photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),(*errorBoxes.begin())->getBoxId());
+
+
+        }
+
+
 }
 
 void TaskManager::handleOtherErrors(bool error1, bool error2) {
@@ -886,7 +966,7 @@ bool TaskManager::isClusterAlreadyInList(int clusterId) {
 bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
     // Define a threshold for matching dimensions
     //std::cout << "DIMENSION MATHCINGr" << std::endl;
-    float threshold = 1.5; // Adjust as needed
+    float threshold = 2.5; // Adjust as needed
     float thresholdZ = 1.0;
     //auto conversion = 5.64634146;
 
@@ -916,9 +996,9 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
             conversionZ = 8.72f;
         }
         else{
-            if(cluster.clusterSize<5000){
-                conversionX = 7.3f;
-                conversionY = 10.0f;
+            if(cluster.clusterSize<7000){
+                conversionX = 6.3f;
+                conversionY = 6.5f;
                 conversionZ = 10.0f;
             }
             else if(cluster.clusterSize<10000){
@@ -941,13 +1021,13 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
         if (std::abs(cluster.dimensions.x() - cluster.dimensions.y()) <= 10) {
             // The dimensions x and y are similar within a tolerance of 10 points
             if(cluster.clusterSize < 7000){
-                conversionX = 7.9f;
-                conversionY = 7.9f;
-                conversionZ = 10.0f;
+                conversionX = 6.6f;
+                conversionY = 6.9f;
+                conversionZ = 9.0f;
             }
             else if(cluster.clusterSize<10000){
-                conversionX = 7.45f;
-                conversionY = 7.5f;
+                conversionX = 7.82f;
+                conversionY = 7.85f;
                 conversionZ = 9.2f;
             }
             else{
@@ -960,19 +1040,24 @@ bool TaskManager::dimensionsMatch(const ClusterInfo &cluster, const Box &box1) {
         }
         else{
             if (cluster.clusterSize < 3000){
-                conversionX = 5.5f;
+                conversionX = 7.65f;
                 conversionY = 6.87;
                 conversionZ = 8.2f;
             }
             else if(cluster.clusterSize<5000){
-                conversionX = 6.21f;
-                conversionY = 6.8f;
+                conversionX = 7.0f;
+                conversionY = 6.7f;
                 conversionZ = 10.0f;
             }
+            else if(cluster.clusterSize<9000){
+                conversionX = 7.25f;
+                conversionY = 6.5f;
+                conversionZ = 8.99f;
+            }
             else if(cluster.clusterSize<10000){
-                conversionX = 6.25f;
-                conversionY = 7.5f;
-                conversionZ = 9.99f;
+                conversionX = 5.62f;
+                conversionY = 5.62f;
+                conversionZ = 10.6f;
             }
             else if(cluster.clusterSize<13000){
                 conversionX = 6.0f;

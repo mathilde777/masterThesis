@@ -340,8 +340,8 @@ std::vector<int> Database::getUnstoredBoxes() {
 }
 
 // Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
- std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> Database::getKnownBoxes() {
-    std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> knownBoxes = std::make_shared<std::vector<std::shared_ptr<KnownBox>>>();
+std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
+  std::vector<std::shared_ptr<KnownBox>> knownBoxes = std::vector<std::shared_ptr<KnownBox>>();
     //std::vector<std::shared_ptr<KnownBox>> knownBoxes;
 
     try {
@@ -359,7 +359,7 @@ std::vector<int> Database::getUnstoredBoxes() {
 
                   std::shared_ptr<KnownBox> box = std::make_shared<KnownBox>(boxId, boxName, new_box, trained);
 
-                knownBoxes->push_back(box);
+                knownBoxes.push_back(box);
             }
         }
 

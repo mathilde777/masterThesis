@@ -29,18 +29,12 @@ set(SOURCES
     mainwindow.ui
     database.h
     database.cpp
-
-
-
     detection2D.h
     detection2D.cpp
     TaskManager.cpp
     TaskManager.h
     taskPreparer.h
     taskPreparer.cpp
-
-
-
     photoProcessing.h
     3D_detection.cpp
     result.h
@@ -48,13 +42,21 @@ set(SOURCES
     task.h
     3D_detection.h
      knownBox.h
-
      errorManager.cpp
      errorManager.h
+     taskType.h
+     addtask.cpp
+     addTask.h
+     updateTask.h
+     findTask.h
+     updateTask.cpp
+     findTask.cpp
 )
 
 # Add an executable target
 add_executable(simulation ${SOURCES}
+
+
 
 
 

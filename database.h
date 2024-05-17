@@ -38,7 +38,7 @@ public:
     int getTrayId(int box_id);
     std::vector<int> getUnstoredBoxes();
     std::vector<std::pair<int, std::string>>  getStoredBoxes();
-     std::shared_ptr<std::vector<std::shared_ptr<KnownBox>>> getKnownBoxes();
+    std::vector<std::shared_ptr<KnownBox>> getKnownBoxes();
     std::vector<std::shared_ptr<Box>> getAllBoxesInTray(int trayId) ;
     std::shared_ptr<Box> getBox(int tray, int boxId);
     std::tuple<double, double, double> getBoxDimensions(int boxId);

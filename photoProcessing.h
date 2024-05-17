@@ -135,6 +135,33 @@ public:
         return latestFile;
     }
 
+    std::string getCurrentTimestamp() {
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+        std::tm* now_tm = std::localtime(&now_time);
+
+        std::ostringstream oss;
+        oss << std::put_time(now_tm, "%m_%d_%H_%M");
+        return oss.str();
+    }
+
+    // Function to store the cropped image in the database and also move it to specified directory
+    // Parameter should be only the full path of the cropped image and boxID
+    // So it renames a picture name to train_boxId.jpg and moves it to the specified directory
+    void storeCroppedImage(const std::string& croppedImagePath, int boxId) {
+        // Get the current timestamp
+        std::string timestamp = getCurrentTimestamp();
+
+        // Move the cropped image to the specified directory with the new name
+        std::string newImagePath = "/home/user/windows-share/training/train_" + std::to_string(boxId) + "_" + timestamp + ".jpg";
+
+        // Save the image to the specified directory
+        fs::rename(croppedImagePath, newImagePath);
+
+        // Print the new path
+        std::cout << "Stored cropped image at: " << newImagePath << std::endl;
+    }
+
 };
 
 #endif // PHOTOPROCESSING_H
