@@ -3,16 +3,18 @@
 
 
 
+#include "qobject.h"
+#include "qtmetamacros.h"
 #include <memory>
+#include "task.h"
 
-class Task; // Forward declaration of Task class
-
-class TaskType {
-public:
-    explicit TaskType(std::shared_ptr<Task> task) : task(task) {}
+class TaskType: public QObject {
+    Q_OBJECT
+public: // For
+    explicit TaskType();
     virtual ~TaskType() = default;
 
-    virtual void executeTask() = 0; // Pure virtual function
+    virtual void executeTask(std::shared_ptr<Task> task) = 0; // Pure virtual function
 
 protected:
     std::shared_ptr<Task> task;

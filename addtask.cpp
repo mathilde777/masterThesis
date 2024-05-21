@@ -3,9 +3,9 @@
 #include "task.h"
 #include <iostream>
 
-AddTask::AddTask(std::shared_ptr<Task> task) : TaskType(task) {}
+AddTask::AddTask() : TaskType() {}
 
-void AddTask::executeTask() {
+void AddTask::executeTask(std::shared_ptr<Task> task) {
     // Implementation of add task
     std::cout << "Executing Add Task" << std::endl;
 }

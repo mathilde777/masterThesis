@@ -6,9 +6,9 @@
 
 class AddTask : public TaskType {
 public:
-    explicit AddTask(std::shared_ptr<Task> task);
+    explicit AddTask();
 
-    void executeTask() override;
+    void executeTask(std::shared_ptr<Task> task) override;
 
     // Other specific functions for AddTask
     void specificFunctionForAddTask();

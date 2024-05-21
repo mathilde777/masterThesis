@@ -160,7 +160,7 @@ void MainWindow::populateBoxLists() {
             boxComboBox->addItem(QString("%1 - %2").arg(box->getProductId()).arg(QString::fromStdString(box->getProductName())));
         }
     }
-    for (int trayId = 0; trayId <= 5; ++trayId) {
+    for (int trayId = 0; trayId <= 15; ++trayId) {
         trayComboBox->addItem(QString::number(trayId));
     }
 }
@@ -222,6 +222,9 @@ void MainWindow::updateButtonClicked() {
 
 void MainWindow::newBoxClicked() {
     createInputDialog();
+} void MainWindow::updte(int trayId)
+{
+    updat
 }
 
 void MainWindow::createInputDialog() {
@@ -262,7 +265,7 @@ void MainWindow::addNewKnownBox(const QString &width, const QString &height, con
 }
 
 void MainWindow::addImages() {
-    // Implement functionality to add images for 2D training
+
 }
 void MainWindow::calibrate() {
 

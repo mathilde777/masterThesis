@@ -2,9 +2,9 @@
 #include "task.h"
 #include <iostream>
 
-FindTask::FindTask(std::shared_ptr<Task> task) : TaskType(task) {}
+FindTask::FindTask() : TaskType() {}
 
-void FindTask::executeTask() {
+void FindTask::executeTask(std::shared_ptr<Task> task) {
     // Implementation of find task
     std::cout << "Executing Find Task" << std::endl;
 }

@@ -5,9 +5,9 @@
 
 class FindTask : public TaskType {
 public:
-    explicit FindTask(std::shared_ptr<Task> task);
+    explicit FindTask();
 
-    void executeTask() override;
+    void executeTask(std::shared_ptr<Task> task) override;
     void specificFunctionForFindTask();
 private:
     int trained;

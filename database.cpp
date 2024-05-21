@@ -299,7 +299,7 @@ int Database::getTrayId(int box_id) {
 
             // Check if the result set is valid and process it
             if (resultSet && resultSet->next()) {
-                id = resultSet->getInt("trayid");
+                id = resultSet->getInt("trayId");
             }
         } while (pstmt->getMoreResults()); // Consume any additional result sets
 
@@ -354,7 +354,7 @@ std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
             while (resultSet && resultSet->next()) {
                 int boxId = resultSet->getInt("id");
                 std::string boxName = resultSet->getString("productName");
-                int new_box = resultSet->getInt("new_box");
+                int new_box = resultSet->getInt("newBox");
                 int trained = resultSet->getInt("trained");
 
                   std::shared_ptr<KnownBox> box = std::make_shared<KnownBox>(boxId, boxName, new_box, trained);
@@ -387,7 +387,7 @@ std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
 
             while (resultSet && resultSet->next()) {
                 int id = resultSet->getInt("id");
-                int boxId = resultSet->getInt("boxid");
+                int boxId = resultSet->getInt("boxId");
                 std::string boxName = resultSet->getString("productName");
                 storedBoxes.push_back(std::make_pair(id, boxName));
             }
@@ -471,8 +471,8 @@ std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
 
             while (resultSet && resultSet->next()) {
                 int id = resultSet->getInt("id");
-                int boxId = resultSet->getInt("boxid");
-                int trayId = resultSet->getInt("trayid");
+                int boxId = resultSet->getInt("boxId");
+                int trayId = resultSet->getInt("trayId");
                 double lastX = resultSet->getDouble("lastX");
                 double lastY = resultSet->getDouble("lastY");
                 double lastZ = resultSet->getDouble("lastZ");

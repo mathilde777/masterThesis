@@ -10,6 +10,7 @@
 #include <memory> // For std::shared_ptr
 #include "photoProcessing.h"
 //#include "/home/suleyman/Desktop/MasterThesis/library/lib/include/pcl_3d.h"
+#include "updateTask.h"//
 
 class TaskManager : public QObject {
     Q_OBJECT
@@ -20,6 +21,8 @@ public:
 
     std::vector<std::shared_ptr<Task>> queue;
     std::shared_ptr<Database> db;
+    std::unique_ptr<UpdateTask> update_task;
+
 
     //Task functions
     void addTask(int boxId, int trayId, int task);
@@ -76,6 +79,7 @@ private slots:
     void preparingDone();
     void onTaskCompleted();
     void onTaskPrepared(std::shared_ptr<Task> task);
+    void updateUiText(const QString& message);
 
 private:
 
