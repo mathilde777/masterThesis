@@ -310,6 +310,7 @@ int Database::getTrayId(int box_id) {
     return id;
 }
 
+/**
 
 // Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
 std::vector<int> Database::getUnstoredBoxes() {
@@ -338,6 +339,7 @@ std::vector<int> Database::getUnstoredBoxes() {
 
     return unstoredBoxes;
 }
+**/
 
 // Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
 std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
@@ -354,7 +356,7 @@ std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
             while (resultSet && resultSet->next()) {
                 int boxId = resultSet->getInt("id");
                 std::string boxName = resultSet->getString("productName");
-                int new_box = resultSet->getInt("new_box");
+                int new_box = resultSet->getInt("newBox");
                 int trained = resultSet->getInt("trained");
 
                   std::shared_ptr<KnownBox> box = std::make_shared<KnownBox>(boxId, boxName, new_box, trained);
