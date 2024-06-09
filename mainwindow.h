@@ -86,6 +86,7 @@ private:
      void createInputDialog();
 
      QPushButton *addTrainingImages = nullptr;
+     void processTrainingImage(const QString& selectedBox, const QString& fileName);
 
 signals:
     void trayDocked();

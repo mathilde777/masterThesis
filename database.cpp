@@ -310,38 +310,8 @@ int Database::getTrayId(int box_id) {
     return id;
 }
 
-/**
 
-// Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
-std::vector<int> Database::getUnstoredBoxes() {
-    std::vector<int> unstoredBoxes;
 
-    try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetUnstoredBoxes()"));
-        bool isResult = pstmt->execute(); // Execute the stored procedure
-
-        if (isResult) {
-            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
-
-            while (resultSet && resultSet->next()) {
-                int boxId = resultSet->getInt("id");
-                unstoredBoxes.push_back(boxId);
-            }
-        }
-
-        // Consume any additional result sets to avoid "Commands out of sync" error
-        while (pstmt->getMoreResults()) {
-            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
-        }
-    } catch (sql::SQLException& e) {
-        std::cerr << "SQL error: " << e.what() << std::endl;
-    }
-
-    return unstoredBoxes;
-}
-**/
-
-// Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
 std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
   std::vector<std::shared_ptr<KnownBox>> knownBoxes = std::vector<std::shared_ptr<KnownBox>>();
     //std::vector<std::shared_ptr<KnownBox>> knownBoxes;
@@ -375,6 +345,7 @@ std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
 
     return knownBoxes;
 }
+
 
 
 std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
@@ -504,3 +475,14 @@ std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
     return boxes;
 }
 
+void Database::addTrainingImage(int box_id, std::string pic ) {
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL addTrainingImage(?, ?)"));
+        pstmt->setInt(1, box_id);
+        pstmt->setString(2, pic);
+        pstmt->execute();
+        std::cout << "Training image added " << std::endl;
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+}
