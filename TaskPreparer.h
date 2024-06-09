@@ -4,8 +4,8 @@
 #include <QThread>
 #include <memory>
 #include <QMetaType>
-#include "database.h"
-#include "task.h"
+#include "Database.h"
+#include "Task.h"
 
 class TaskPreparer : public QObject {
     Q_OBJECT

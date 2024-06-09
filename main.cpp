@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "database.h"
+#include "Database.h"
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
@@ -7,12 +7,12 @@
 #include <iostream>
 #include <array>
 #include <string>
-#include "detection2D.h"
+#include "Detection2D.h"
 #include <QDebug>
 #include "pcl_3d.h"
 #include <QMetaType>
 #include <memory>
-#include "task.h" // Make sure this includes your Task class definition
+#include "Task.h" // Make sure this includes your Task class definition
 
 using namespace std;
 //#include <QtSqlDatabase>

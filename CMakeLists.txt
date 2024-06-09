@@ -27,36 +27,37 @@ set(SOURCES
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
-    database.h
-    database.cpp
-    detection2D.h
-    detection2D.cpp
+    Database.h
+    Database.cpp
+    Detection2D.h
+    Detection2D.cpp
     TaskManager.cpp
     TaskManager.h
-    taskPreparer.h
-    taskPreparer.cpp
-    photoProcessing.h
-    3D_detection.cpp
-    result.h
-    box.h
-    task.h
-    3D_detection.h
+    TaskPreparer.h
+    TaskPreparer.cpp
+    PhotoProcessing.h
+    Detection3D.cpp
+    Result.h
+    Box.h
+    Task.h
+    Detection3D.h
      knownBox.h
      errorManager.cpp
      errorManager.h
-     taskType.h
-     addtask.cpp
-     addTask.h
-     updateTask.h
-     findTask.h
-     updateTask.cpp
-     findTask.cpp
+     BaseTask.h
+     Addtask.cpp
+     AddTask.h
+     UpdateTask.h
+     FindTask.h
+     UpdateTask.cpp
+     FindTask.cpp
 )
 
 # Add an executable target
 add_executable(simulation ${SOURCES}
-    dimensionMatching.h
-    dimensionMatching.cpp
+    TaskFunctions.h
+    TaskFunctions.cpp
+    functions.cpp
 
 
 

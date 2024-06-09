@@ -1,5 +1,5 @@
-#include "database.h"
-#include "task.h"
+#include "Database.h"
+#include "Task.h"
 #include <cppconn/prepared_statement.h>
 #include <iostream>
 

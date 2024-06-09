@@ -13,7 +13,7 @@
 #include <QTimer>
 #include <QMessageBox>
 #include <memory>
-#include "database.h"
+#include "Database.h"
 #include "TaskManager.h"
 
 QT_BEGIN_NAMESPACE

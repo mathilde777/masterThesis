@@ -1,6 +1,6 @@
 #ifndef ERRORMANAGER_H
 #define ERRORMANAGER_H
-#include "database.h"
+#include "Database.h"
 #include "qobject.h"
 class ErrorManager : public QObject {
     Q_OBJECT

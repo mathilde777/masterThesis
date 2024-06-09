@@ -1,8 +1,8 @@
-#include "taskPreparer.h"
-#include "database.h"
+#include "TaskPreparer.h"
+#include "Database.h"
 #include "qtimer.h"
 #include <iostream>
-#include "box.h"
+#include "Box.h"
 
 #include <QMetaType>
 #include <memory>

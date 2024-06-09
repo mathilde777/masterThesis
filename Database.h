@@ -1,7 +1,7 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
-#include "task.h"
+#include "Task.h"
 #include <mysql_connection.h>
 #include <mysql_driver.h>
 #include <vector>

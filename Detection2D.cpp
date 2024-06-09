@@ -1,6 +1,6 @@
 // detection2D.cpp
 
-#include "detection2D.h"
+#include "Detection2D.h"
 #include <iostream>
 #include <cstdio>
 #include <cstring>

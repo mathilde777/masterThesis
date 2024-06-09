@@ -1,8 +1,8 @@
 #include "pcl_3d.h"
-#include "task.h"
-#include "result.h"
+#include "Task.h"
+#include "Result.h"
 #include <memory.h>
-#include "3D_detection.h"
+#include "Detection3D.h"
 #include <cmath> // For std::abs
 //std::shared_ptr<std::vector<ClusterInfo>>
 std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPosititon,Eigen::Vector3f dimensions) {

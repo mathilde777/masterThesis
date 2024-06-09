@@ -1,6 +1,6 @@
 ﻿#include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "detection2D.h"
+#include "Detection2D.h"
 #include <QComboBox>
 #include <QListWidget>
 #include <QLabel>
@@ -214,7 +214,7 @@ void MainWindow::updateStatusText(const QString& message) {
 
 void MainWindow::updateButtonClicked() {
     if (dockedTray != 0) {
-        tm->update(dockedTray);
+        tm->executeUpdate(dockedTray);
     } else {
         QMessageBox::warning(this, "Error", "No tray docked");
     }
@@ -222,9 +222,6 @@ void MainWindow::updateButtonClicked() {
 
 void MainWindow::newBoxClicked() {
     createInputDialog();
-} void MainWindow::updte(int trayId)
-{
-    updat
 }
 
 void MainWindow::createInputDialog() {
