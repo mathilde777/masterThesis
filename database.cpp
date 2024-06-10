@@ -407,6 +407,49 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
     return dimensions;
 }
 
+Eigen::Vector3f Database::getReferences(int position) {
+    Eigen::Vector3f refPoint(0.0f, 0.0f, 0.0f); // Initialize to a default value
+
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetReference(?)"));
+        pstmt->setInt(1, position);
+        bool hasResults = pstmt->execute(); // Execute the stored procedure
+
+        if (hasResults) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+
+            if (resultSet && resultSet->next()) {
+                float x = resultSet->getDouble("referenceX");
+                float y = resultSet->getDouble("referenceY");
+                float z = resultSet->getDouble("referenceZ");
+                refPoint = Eigen::Vector3f(x, y, z);
+            }
+        }
+
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return refPoint;
+}
+
+void Database::addReference(int posId, float x,float y, float z ) {
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL addReference(?,?, ?, ?)"));
+        pstmt->setInt(1, posId);
+        pstmt->setDouble(2, x);
+        pstmt->setDouble(3, y);
+        pstmt->setDouble(4, z);
+        pstmt->execute();
+
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+}
 
 std::shared_ptr<Box> Database::getBox(int tray, int Id) {
     std::shared_ptr<Box> box;

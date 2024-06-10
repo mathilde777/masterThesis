@@ -332,7 +332,7 @@ void MainWindow::calibrate() {
     int positionIndex = 1;
 
 
-    tm->calibrateTray(positions[positionIndex-1]);
+    tm->calibrateTray(positionIndex - 1,positions[positionIndex-1]);
 
 
 }

@@ -74,9 +74,10 @@ bool TaskManager::checkFlaggedBoxes(int productId)
     return false;
 }
 
-void TaskManager::calibrateTray(double height)
+void TaskManager::calibrateTray(int position, double height)
 {
-    calibrate(height);
+    auto refPoint = calibrate(height);
+    db->addReference(position,refPoint.x(),refPoint.y(),refPoint.z());
 }
 
 void TaskManager::preparingDone() {
@@ -86,6 +87,7 @@ void TaskManager::preparingDone() {
 
 void TaskManager::trayDocked() {
     std::cout << "tray docked executing tasks"<< std::endl;
+    refernce = db->getReferences(tray);
     startExecutionLoop();
     emit trayDockedUpdate();
 }
@@ -168,7 +170,7 @@ void TaskManager::executeFullTrayScan(const std::shared_ptr<Task>& task) {
     std::cout << "FULL TRAY SCAN " << std::endl;
 
     emit updateStatus(QString("FIND ERROR : box with id %1 has no previous location -> scanning full tray").arg(task->getBoxId()));
-    auto resultsCluster = run3DDetection();
+    auto resultsCluster = run3DDetection(refernce);
     processBoxDetectionResult(task, resultsCluster);
 }
 
@@ -176,7 +178,7 @@ void TaskManager::executePartialTrayScan(const std::shared_ptr<Task>& task, cons
      std::cout << "PARTIAL TRAY SCAN " << std::endl;
     emit updateStatus(QString("FIND : running 3D for %1").arg(task->getBoxId()));
     std::cout << "Last position: " << lastPosition << std::endl;
-    auto resultsCluster = ::run3DDetection(lastPosition, task->getBox()->getClusterDimensions());
+    auto resultsCluster = ::run3DDetection(refernce,lastPosition, task->getBox()->getClusterDimensions());
     processBoxDetectionResult(task, resultsCluster);
 }
 
@@ -422,7 +424,7 @@ Eigen::Vector3f TaskManager::handleNoResults(std::shared_ptr<Task> task) {
 }
 int TaskManager::run3DDetectionThread() {
 
-    auto result = run3DDetection();
+    auto result = run3DDetection(refernce);
 
 }
 double distance(double x1, double y1, double z1, double x2, double y2, double z2) {
@@ -470,7 +472,7 @@ void TaskManager::update(int id) {
     putZeroLocationBoxesAtBack(trayBoxes);
 
     std::future<std::shared_ptr<std::vector<ClusterInfo>>> resultFuture = std::async([this]() {
-        return run3DDetection();
+        return run3DDetection(refernce);
     });
     std::shared_ptr<std::vector<ClusterInfo>> resultsCluster = resultFuture.get();
 

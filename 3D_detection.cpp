@@ -5,7 +5,7 @@
 #include "3D_detection.h"
 #include <cmath> // For std::abs
 //std::shared_ptr<std::vector<ClusterInfo>>
-std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPosititon,Eigen::Vector3f dimensions) {
+std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f  reference,Eigen::Vector3f lastPosititon,Eigen::Vector3f dimensions) {
     PCL_3D pcl3d;
     auto conversionX = 6.50f;
     auto conversionY = 8.00f;
@@ -33,11 +33,11 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
     std::string trayFilePath = "/home/user/windows-share/empty/2024.5.16.13.38.37_Color_PointCloud.ply";
 
     //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
-    auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
+   // auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
     //Update dimension by conversion factor (multiply by conversion factor for x,y) and z by conversion factor*1.5
     //dimensions = Eigen::Vector3f(dimensions.x()*conversionX,dimensions.y()*conversionY,dimensions.z()*(conversionZ));
 
-    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint,lastPosititon,dimensions);
+    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,reference,lastPosititon,dimensions);
 
     for (auto loc : boundingBoxInfo)
     {
@@ -52,7 +52,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f lastPo
 
 }
 
-std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
+std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f  reference) {
     PCL_3D pcl3d;
     auto conversionX = 6.50f;
     auto conversionY = 8.00f;
@@ -77,8 +77,8 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
 
     //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
 
-    auto refPoint = Eigen::Vector3f(458.649, 359, 699.949);
-    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,refPoint);
+    //auto refPoint = Eigen::Vector3f(458.649, 359, 699.949);
+    auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,reference);
     for (auto loc : boundingBoxInfo)
     {
         cout << "Cluster ID: " << loc.clusterId << endl;
@@ -92,7 +92,7 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( ) {
 
 }
 
-void calibrate(double height)
+Eigen::Vector3f calibrate(double height)
 {
     PCL_3D pcl3d;
 
@@ -112,4 +112,5 @@ void calibrate(double height)
         std::cout << "PLY file found" << std::endl;
     }
     auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), height);
+    return refPoint;
 }

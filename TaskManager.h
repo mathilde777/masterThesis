@@ -41,6 +41,7 @@ public:
     float conversionX;
     float conversionY;
     float conversionZ;
+    Eigen::Vector3f refernce = Eigen::Vector3f(0.0f, 0.0f, 0.0f) ;
     std::deque<std::shared_ptr<Task>> executingQueue;
     std::vector<std::shared_ptr<Task>> preparedQueue;
     std::shared_ptr<PhotoProcessor> photoProcessing;
@@ -57,7 +58,7 @@ public:
      void update(int trayId);
 
     void updateKnownBoxes();
-     void calibrateTray(double height);
+     void calibrateTray(int position,double height);
 
 
 

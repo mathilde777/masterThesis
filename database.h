@@ -45,6 +45,10 @@ public:
     void updateBox(int id,double last_x, double last_y,double last_z,double cx, double cy,double cz);
     void newKnownBox( std::string name, double width, double height,double  lenght);
     void addTrainingImage(int box_id,std::string pic );
+    void  addReference(int posId, float x,float y, float z );
+    Eigen::Vector3f getReferences(int position);
+
+
 
 public slots:
     void storeBox(int id, int tray);
