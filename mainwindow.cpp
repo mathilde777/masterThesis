@@ -132,6 +132,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
+
     populateBoxLists();
 
 
@@ -327,6 +328,11 @@ void MainWindow::addNewKnownBox(const QString &width, const QString &height, con
 }
 
 void MainWindow::calibrate() {
+    std::array<double, 4> positions = {690, 500, 400, 700};
+    int positionIndex = 1;
+
+
+    tm->calibrateTray(positions[positionIndex-1]);
 
 
 }

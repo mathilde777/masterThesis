@@ -57,6 +57,8 @@ public:
      void update(int trayId);
 
     void updateKnownBoxes();
+     void calibrateTray(double height);
+
 
 
 signals:

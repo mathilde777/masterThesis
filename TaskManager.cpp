@@ -74,6 +74,10 @@ bool TaskManager::checkFlaggedBoxes(int productId)
     return false;
 }
 
+void TaskManager::calibrateTray(double height)
+{
+    calibrate(height);
+}
 
 void TaskManager::preparingDone() {
     std::cout << "DONE PREPARING"<< std::endl;
