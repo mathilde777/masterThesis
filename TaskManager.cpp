@@ -76,8 +76,10 @@ bool TaskManager::checkFlaggedBoxes(int productId)
 
 void TaskManager::calibrateTray(int position, double height)
 {
+
     auto refPoint = calibrate(height);
     db->addReference(position,refPoint.x(),refPoint.y(),refPoint.z());
+    emit updateStatus(QString("CALIBRATING TRAY"));
 }
 
 void TaskManager::preparingDone() {
@@ -87,7 +89,8 @@ void TaskManager::preparingDone() {
 
 void TaskManager::trayDocked() {
     std::cout << "tray docked executing tasks"<< std::endl;
-    refernce = db->getReferences(tray);
+    refernce = db->getReferences(0);
+
     startExecutionLoop();
     emit trayDockedUpdate();
 }
@@ -932,10 +935,15 @@ void TaskManager::handleErrorBoxes() {
 }
 
 void TaskManager::handleOtherErrors(bool error1, bool error2) {
-    if(error1 || error2)
+    if(error1 )
     {
 
-        emit updateStatus(QString("ERROR  :  CHECK TRAY FIX AND RE RUN UPDATE"));
+        emit updateStatus(QString("ERROR 1 :  CHECK TRAY FIX AND RE RUN UPDATE"));
+    }
+    else if(error2)
+    {
+
+        emit updateStatus(QString("ERROR 2 :  CHECK TRAY FIX AND RE RUN UPDATE"));
     }
 }
 void TaskManager::deleteClusterById(std::shared_ptr<std::vector<ClusterInfo>> resultsCluster, int id) {

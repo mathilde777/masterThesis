@@ -41,7 +41,7 @@ public:
     float conversionX;
     float conversionY;
     float conversionZ;
-    Eigen::Vector3f refernce = Eigen::Vector3f(0.0f, 0.0f, 0.0f) ;
+    Eigen::Vector3f refernce;
     std::deque<std::shared_ptr<Task>> executingQueue;
     std::vector<std::shared_ptr<Task>> preparedQueue;
     std::shared_ptr<PhotoProcessor> photoProcessing;

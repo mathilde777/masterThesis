@@ -6,6 +6,10 @@
 #include <QLabel>
 #include <QDateTime>
 #include <QFileDialog>
+#include <QFormLayout>
+#include <QLineEdit>
+#include <QGroupBox>
+#include <QSpacerItem>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), dockedTray(0),
@@ -20,123 +24,114 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(centralWidget);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
-    dockedInfoLabel = new QLabel("No tray docked", this); // Initialize the QLabel
+
+    // Docked Info Label
+    dockedInfoLabel = new QLabel("No tray docked", this);
     mainLayout->addWidget(dockedInfoLabel);
 
+    // Status Text
     statusText = new QTextEdit(this);
-    statusText->setReadOnly(true); // Make it read-only
+    statusText->setReadOnly(true);
     mainLayout->addWidget(statusText);
-    // Find section
-    QVBoxLayout *findLayout = new QVBoxLayout;
-    selectBoxLabel = new QLabel("Select Stored Box:", this);
 
+    // Find Section
+    QGroupBox *findGroupBox = new QGroupBox("Find Stored Box");
+    QVBoxLayout *findLayout = new QVBoxLayout(findGroupBox);
+    selectBoxLabel = new QLabel("Select Stored Box:", this);
     findComboBox = new QComboBox(this);
-    findLayout->addWidget(new QLabel("Find:", this));
     findLayout->addWidget(selectBoxLabel);
     findLayout->addWidget(findComboBox);
-
     findButton = new QPushButton("Find", this);
-    findButton->setEnabled(false); // Initially disable the button
+    findButton->setEnabled(false);
     findLayout->addWidget(findButton);
+    mainLayout->addWidget(findGroupBox);
 
-    // Add section
-    QVBoxLayout *addLayout = new QVBoxLayout;
+    // Add Section
+    QGroupBox *addGroupBox = new QGroupBox("Add Known Box to Tray");
+    QVBoxLayout *addLayout = new QVBoxLayout(addGroupBox);
     selectBoxLabel2 = new QLabel("Select Known Box:", this);
-
     boxComboBox = new QComboBox(this);
     selectTrayLabel = new QLabel("Select Tray:", this);
     trayComboBox = new QComboBox(this);
-
-    addLayout->addWidget(new QLabel("Add:", this));
     addLayout->addWidget(selectBoxLabel2);
     addLayout->addWidget(boxComboBox);
     addLayout->addWidget(selectTrayLabel);
     addLayout->addWidget(trayComboBox);
-
     addButton = new QPushButton("Add", this);
-    addButton->setEnabled(false); // Initially disable the button
+    addButton->setEnabled(false);
     addLayout->addWidget(addButton);
+    mainLayout->addWidget(addGroupBox);
 
-    // Slider for tolerances
-    toleranceSlider = new QSlider(Qt::Horizontal, this);
-    toleranceSlider->setMinimum(0);
-    toleranceSlider->setMaximum(100);
-    toleranceSlider->setValue(50);
-    toleranceSlider->setTickInterval(10);
-    toleranceSlider->setTickPosition(QSlider::TicksBelow);
-
-    // Layout for tolerances
-    toleranceLayout = new QHBoxLayout;
-    toleranceLayout->addWidget(new QLabel("Tolerances:", this));
-    toleranceLayout->addWidget(toleranceSlider);
-
-    QHBoxLayout *trayButtonLayout = new QHBoxLayout;
-    for (int i = 0; i < 3; ++i) {
-        trayButtons[i] = new QPushButton(QString("Tray %1").arg(i + 1), this);
-        trayButtonLayout->addWidget(trayButtons[i]);
-        connect(trayButtons[i], &QPushButton::clicked, this, [=]() { trayButtonClicked(i + 1); });
+    // Run Tasks Section
+    QGroupBox *runTasksGroupBox = new QGroupBox("Run Tray Tasks");
+    QVBoxLayout *runTasksLayout = new QVBoxLayout(runTasksGroupBox);
+    runTrayTasksComboBox = new QComboBox(this);
+    for (int i = 0; i < 15; ++i) {
+        runTrayTasksComboBox->addItem(QString("Tray %1").arg(i + 1));
     }
+    runTasksLayout->addWidget(runTrayTasksComboBox);
+    runTasksButton = new QPushButton("Run Tasks", this);
+    runTasksLayout->addWidget(runTasksButton);
+    mainLayout->addWidget(runTasksGroupBox);
 
-    // Add layouts to mainLayout
-    mainLayout->addLayout(findLayout);
-    mainLayout->addLayout(addLayout);
-    mainLayout->addLayout(toleranceLayout);
-    mainLayout->addLayout(trayButtonLayout);
+    // Update Section
+    QGroupBox *updateGroupBox = new QGroupBox("Update Docked Tray");
+    QVBoxLayout *updateLayout = new QVBoxLayout(updateGroupBox);
+    updateButton = new QPushButton("Update docked tray", this);
+    updateLayout->addWidget(updateButton);
+    mainLayout->addWidget(updateGroupBox);
 
-    // Connect findComboBox to enable/disable the findButton
+    // Calibration Section
+    QGroupBox *calibrateGroupBox = new QGroupBox("Calibrate Tray");
+    QVBoxLayout *calibrateLayout = new QVBoxLayout(calibrateGroupBox);
+    calibration = new QPushButton("Calibrate tray", this);
+    calibrateLayout->addWidget(calibration);
+    mainLayout->addWidget(calibrateGroupBox);
+
+    // Add New Box Section
+    QGroupBox *addNewBoxGroupBox = new QGroupBox("Add New Known Box");
+    QVBoxLayout *addNewBoxLayout = new QVBoxLayout(addNewBoxGroupBox);
+    addNewBox = new QPushButton("Add new Known Box", this);
+    addNewBoxLayout->addWidget(addNewBox);
+    mainLayout->addWidget(addNewBoxGroupBox);
+
+    // Add Training Images Section
+    QGroupBox *addTrainingImagesGroupBox = new QGroupBox("Add Images for 2D Training");
+    QVBoxLayout *addTrainingImagesLayout = new QVBoxLayout(addTrainingImagesGroupBox);
+    addTrainingImages = new QPushButton("Add Images for 2D training", this);
+    addTrainingImagesLayout->addWidget(addTrainingImages);
+    mainLayout->addWidget(addTrainingImagesGroupBox);
+
+    // Adding spacing between sections
+    mainLayout->addSpacerItem(new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding));
+
+    // Connect signals and slots
     connect(findComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=]() {
-        findButton->setEnabled(!findComboBox->currentText().isEmpty() && findComboBox->currentText() != "");
+        findButton->setEnabled(!findComboBox->currentText().isEmpty());
     });
-
-    // Connect box and tray selection to enable/disable the addButton
     connect(boxComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=]() {
-        addButton->setEnabled(!boxComboBox->currentText().isEmpty() && !trayComboBox->currentText().isEmpty() && boxComboBox->currentText() != "");
+        addButton->setEnabled(!boxComboBox->currentText().isEmpty() && !trayComboBox->currentText().isEmpty());
     });
     connect(trayComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), [=]() {
-        addButton->setEnabled(!boxComboBox->currentText().isEmpty() && !trayComboBox->currentText().isEmpty() && trayComboBox->currentText() != "");
+        addButton->setEnabled(!boxComboBox->currentText().isEmpty() && !trayComboBox->currentText().isEmpty());
     });
 
-
-
-    // Connect addButton to addButtonClicked() only when both box and tray are selected
     connect(findButton, &QPushButton::clicked, this, &MainWindow::findButtonClicked);
-
     connect(addButton, &QPushButton::clicked, this, &MainWindow::addButtonClicked);
+    connect(runTasksButton, &QPushButton::clicked, this, &MainWindow::trayButtonClicked);
+    connect(updateButton, &QPushButton::clicked, this, &MainWindow::updateButtonClicked);
+    connect(calibration, &QPushButton::clicked, this, &MainWindow::calibrate);
+    connect(addNewBox, &QPushButton::clicked, this, &MainWindow::newBoxClicked);
+    connect(addTrainingImages, &QPushButton::clicked, this, &MainWindow::addImages);
+
     trayTimer = new QTimer(this);
     trayTimer->setSingleShot(true);
-    // Assuming tm is a std::unique_ptr<TaskManager>
     connect(trayTimer, &QTimer::timeout, tm.get(), &TaskManager::trayDocked);
     connect(tm.get(), &TaskManager::refresh, this, &MainWindow::populateBoxLists);
     connect(tm.get(), &TaskManager::trayDockedUpdate, this, &MainWindow::updateDockedInfo);
-    //connect(tm.get(), &TaskManager::errorOccurredTask, this, &MainWindow::handleErrorTask);
-    //connect(tm.get(), &TaskManager::errorOccurredUpdate, this, &MainWindow::handleErrorUpdate);
     connect(tm.get(), &TaskManager::updateStatus, this, &MainWindow::updateStatusText);
 
-    updateButton = new QPushButton("Update", this);
-    mainLayout->addWidget(updateButton);
-    connect(updateButton, &QPushButton::clicked, this, &MainWindow::updateButtonClicked);
-
-
-    calibration = new QPushButton("Calibrate", this);
-    mainLayout->addWidget(calibration);
-    connect(calibration, &QPushButton::clicked, this, &MainWindow::calibrate);
-
-    addNewBox = new QPushButton("Add new Known Box", this);
-    mainLayout->addWidget(addNewBox);
-    connect(addNewBox, &QPushButton::clicked, this, &MainWindow::newBoxClicked);
-
-    addTrainingImages = new QPushButton("Add Images for 2D training", this);
-    mainLayout->addWidget(addTrainingImages);
-    connect(addNewBox, &QPushButton::clicked, this, &MainWindow::addImages);
-    connect(addTrainingImages, &QPushButton::clicked, this, &MainWindow::addImages);
-
-
-
-
     populateBoxLists();
-
-
-
 }
 
 MainWindow::~MainWindow()
@@ -237,8 +232,9 @@ void MainWindow::addButtonClicked()
 
 }
 
-void MainWindow::trayButtonClicked(int trayNumber){
+void MainWindow::trayButtonClicked(){
     std::cout << "tray docking" << std::endl;
+    int trayNumber = runTrayTasksComboBox->currentIndex()+1;
     dockedTray = trayNumber;
     QMessageBox::information(this, "Tray", QString("Tray %1 ").arg(trayNumber));
     QString info = QString("Tray %1 docking").arg(trayNumber);
@@ -246,7 +242,9 @@ void MainWindow::trayButtonClicked(int trayNumber){
 
     //trayTimer->start(15000); // 15 seconds
     trayTimer->start(100);
+
     tm->prepTasks(trayNumber);
+
 
 }
 

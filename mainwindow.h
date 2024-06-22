@@ -34,7 +34,7 @@ public:
 private slots:
     void findButtonClicked();
     void addButtonClicked();
-    void trayButtonClicked(int trayNumber);
+    void trayButtonClicked();
    void populateBoxLists();
     void updateDockedInfo();
    void updateButtonClicked();
@@ -74,15 +74,14 @@ private:
     QLabel *selectTrayLabel = nullptr;
     QVBoxLayout *findLayout = nullptr;
     QVBoxLayout *addLayout = nullptr;
-    QHBoxLayout *toleranceLayout = nullptr;
-    QSlider *toleranceSlider = nullptr;
     QTimer *trayTimer = nullptr;
     QLabel *dockedInfoLabel;
     QTextEdit *statusText;
      QPushButton *updateButton = nullptr;
      QPushButton *addNewBox = nullptr;
      QPushButton *calibration = nullptr;
-
+        QComboBox *runTrayTasksComboBox;
+     QPushButton *runTasksButton;
      void createInputDialog();
 
      QPushButton *addTrainingImages = nullptr;
