@@ -195,7 +195,7 @@ void MainWindow::addButtonClicked() {
 }
 
 void MainWindow::trayButtonClicked() {
-    int trayNumber = runTrayTasksComboBox->currentIndex();
+    int trayNumber = runTrayTasksComboBox->currentIndex()+1;
     dockedTray = trayNumber;
     QMessageBox::information(this, "Tray", QString("Tray %1 ").arg(trayNumber));
     dockedInfoLabel->setText(QString("Tray %1 docking").arg(trayNumber));
@@ -214,7 +214,7 @@ void MainWindow::updateStatusText(const QString& message) {
 
 void MainWindow::updateButtonClicked() {
     if (dockedTray != 0) {
-        tm->executeUpdate(dockedTray);
+        tm->executeUpdateTask(dockedTray);
     } else {
         QMessageBox::warning(this, "Error", "No tray docked");
     }

@@ -3,9 +3,10 @@
 #include "Detection3D.h"
 #include "clusters.h"
 
-UpdateTask::UpdateTask(int trayId) : trayId(trayId), matchedCluster(std::make_shared<std::vector<ClusterInfo>>()), errorClusters(std::make_shared<std::vector<ClusterInfo>>()) {}
+UpdateTask::UpdateTask(std::shared_ptr<Database> db) : matchedCluster(std::make_shared<std::vector<ClusterInfo>>()), errorClusters(std::make_shared<std::vector<ClusterInfo>>()) {}
 
-void UpdateTask::execute(std::shared_ptr<Database> db) {
+void UpdateTask::execute(int trayId) {
+    trayId = trayId;
     std::cout << "Running update" << std::endl;
 
     trayBoxes = db->getAllBoxesInTray(trayId);
@@ -109,32 +110,33 @@ void UpdateTask::handleMatchedBoxes(std::shared_ptr<Database> db, const std::sha
             return;
         }
 
-        auto directory = "/home/user/windows-share";
-        auto PNGPath = PhotoProcessing::getInstance()->findLatestPngFile(directory);
+         auto directory = "/home/user/windows-share";
+        auto PNGPath = photoProcessing->findLatestPngFile(directory);
         if (!PNGPath) {
             std::cout << "Error: No PNG file found" << std::endl;
-            return;
+            return; // Return early if no PNG file is found
         }
         std::cout << "Path: " << PNGPath->c_str() << std::endl;
 
+        // Check box dimensions and crop accordingly
         if (it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()) {
             if (it->dimensions.x() > it->dimensions.y()) {
-                PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
             } else {
-                PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
             }
         } else {
             if (it->dimensions.x() > it->dimensions.y()) {
-                PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
             } else {
-                PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
             }
         }
 
-        auto PNGPathCropped = PhotoProcessing::getInstance()->findLatestCroppedImage();
+        auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
         if (!PNGPathCropped) {
             std::cout << "Error: No cropped PNG file found" << std::endl;
-            return;
+            return; // Return early if no cropped PNG file is found
         }
         std::cout << "Cropped Path: " << PNGPathCropped->c_str() << std::endl;
 
@@ -166,7 +168,7 @@ void UpdateTask::handleMatchedBoxes(std::shared_ptr<Database> db, const std::sha
             db->updateBox(box->getId(), matchedBoxes[0].centroid.x(), matchedBoxes[0].centroid.y(), matchedBoxes[0].centroid.z(),
                           matchedBoxes[0].dimensions.x(), matchedBoxes[0].dimensions.y(), matchedBoxes[0].dimensions.z());
             matchedCluster->push_back(matchedBoxes[0]);
-            PhotoProcessing::getInstance()->storeCroppedImage(PNGPathCropped->c_str(), box->getBoxId());
+            photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),box->getBoxId());
             return;
         }
     } else {
@@ -178,28 +180,46 @@ void UpdateTask::handleMatchedBoxes(std::shared_ptr<Database> db, const std::sha
         TaskFunctions::sortResultsByDistance(matchedCluster, box);
 
         for (auto it = matchedBoxes.begin(); it != matchedBoxes.end(); ) {
+            std::cout << std::endl;
+            std::cout << "------------------------------------" << std::endl;
+            std::cout << "------------------------------------" << std::endl;
+            std::cout << std::endl;
+            std::cout << "Cluster: " << it->clusterId << std::endl;
+            std::cout << "Cluster: x " << it->centroid.x() << " y " << it->centroid.y() << " z " << it->centroid.z() << std::endl;
+
+            // Get latest png from PhotoProcessing
             auto directory = "/home/user/windows-share";
-            auto PNGPath = PhotoProcessing::getInstance()->findLatestPngFile(directory);
+            auto PNGPath = photoProcessing->findLatestPngFile(directory);
+            std::cout << "Path: " << (PNGPath ? PNGPath->c_str() : "Error: No PNG file found") << std::endl;
+
             if (!PNGPath) {
                 std::cout << "Error: No PNG file found" << std::endl;
                 break;
             }
 
-            if (it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()) {
-                if (it->dimensions.x() > it->dimensions.y()) {
-                    PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
-                } else {
-                    PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+
+            //Box is sided
+            if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
+                if (it->dimensions.x() > it->dimensions.y()){
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
                 }
-            } else {
-                if (it->dimensions.x() > it->dimensions.y()) {
-                    PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
-                } else {
-                    PhotoProcessing::getInstance()->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                else{
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
                 }
             }
 
-            auto PNGPathCropped = PhotoProcessing::getInstance()->findLatestCroppedImage();
+            else{
+                if (it->dimensions.x() > it->dimensions.y()){
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+                }
+                else{
+                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+                }
+            }
+
+
+            auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
+            std::cout << "Crooped Path: " << (PNGPathCropped ? PNGPathCropped->c_str() : "Error: No PNG file found") << std::endl;
             if (!PNGPathCropped) {
                 std::cout << "Error: No cropped PNG file found" << std::endl;
                 break;
@@ -218,7 +238,8 @@ void UpdateTask::handleMatchedBoxes(std::shared_ptr<Database> db, const std::sha
                     break;
                 }
             } else {
-                PhotoProcessing::getInstance()->storeCroppedImage(PNGPathCropped->c_str(), box->getBoxId());
+                std::cout << "NOT TRAINED - SAVE IMAGE" << std::endl;
+                photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),box->getBoxId());
             }
         }
 
@@ -235,7 +256,168 @@ void UpdateTask::handleMatchedBoxes(std::shared_ptr<Database> db, const std::sha
 }
 
 void UpdateTask::handleErrorBoxes(std::shared_ptr<Database> db) {
-    // Logic to handle error boxes
+    //Line sepaarator
+    std::cout << "HANDELING ERROR BOXES" << std::endl;
+    std::cout << " " << std::endl;
+    std::cout << "------------------------------------" << std::endl;
+    std::cout << "------------------------------------" << std::endl;
+    std::cout << " " << std::endl;
+
+    // Print error boxes
+    for (const auto& box : errorBoxes) {
+        std::cout << "Error Box: " << box->getBoxId() << std::endl;
+    }
+    std::cout << "errorLCuster size" << errorClusters->size() << std::endl;
+    auto it = errorClusters->begin();
+    while (it != errorClusters->end()) {
+        std::cout << "HANDELING CLUSTER WITH id "<< it->clusterId << std::endl;
+        //Print which cluster is being checked
+        std::cout << "Cluster: " << it->clusterId << std::endl;
+        std::cout << "x " << it->centroid.x()<< "y " <<  it->centroid.y()  << "z " <<  it->centroid.z()<<std::endl;
+
+
+
+        //Get latest png from PhotoProcessing
+        auto directory = "/home/user/windows-share";
+        auto PNGPath = photoProcessing->findLatestPngFile(directory);
+        std::cout << "Path: " << PNGPath->c_str() << std::endl;
+
+        //check if Path is correct, return string if not correct ==> Error
+        if (!PNGPath) {
+            std::cout << "Error: No PNG file found" << std::endl;
+            break;
+        }
+        //Integrate Cropping
+        //Box is sided
+        if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
+            photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
+        }
+        else{
+            photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
+        }
+
+        auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
+        std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
+
+        //check if Path is correct, return string if not correct ==> Error
+        if (!PNGPathCropped) {
+            std::cout << "Error: No PNG file found" << std::endl;
+            break;
+        }
+        else {
+            //std::cout << "Looking for box with id " << std::endl;
+        }
+        //check with 2D
+        std::shared_ptr<std::vector<DetectionResult>> ret2 = run2D(PNGPathCropped->c_str(), 1);
+
+        //Print detection result
+        for (const auto res : *ret2) {
+            std::cout << "2D Box Prediction: " << res.label << std::endl;
+        }
+
+        std::vector<std::shared_ptr<Box>> idk;
+
+
+        if (ret2->size() == 1) {
+            std::cout << "size of Error Boxes: " << errorBoxes.size() << std::endl;
+
+            for (auto it2 = errorBoxes.begin(); it2 != errorBoxes.end();) {
+                std::cout << "Box: " << ret2->front().label << std::endl;
+                if (ret2->front().label == (*it2)->getBoxId()) {
+                    // Erase the element from matchedBoxes
+                    idk.push_back((*it2));
+                    std::cout << "size: " << idk.size() << std::endl;
+                    it2 = errorBoxes.erase(it2);
+                }
+                else{
+                    ++it2;
+                }
+            }
+
+
+            std::sort(idk.begin(), idk.end(), [this, &it](const std::shared_ptr<Box>& a, const std::shared_ptr<Box>& b) {
+                // Calculate distances between cluster centroids and the box
+                auto distance = [](double x1, double y1, double z1, double x2, double y2, double z2) {
+                    return std::sqrt((x2 - x1) * (x2 - x1) +
+                                     (y2 - y1) * (y2 - y1) +
+                                     (z2 - z1) * (z2 - z1));
+                };
+                double distanceA = distance(a->last_x, a->last_y, a->last_z, it->centroid.x(), it->centroid.y(), it->centroid.z());
+                double distanceB = distance(b->last_x, b->last_y, b->last_z, it->centroid.x(), it->centroid.y(), it->centroid.z());
+
+                return distanceA < distanceB;
+            });
+
+
+
+
+        }
+
+
+
+
+
+
+        if (!idk.empty()) {
+            std::cout << "UPDATE!" << errorBoxes.size() << std::endl;
+            db->updateBox((*idk.begin())->getId(), it->centroid.x(), it->centroid.y(), it->centroid.z(), it->dimensions.x(), it->dimensions.y(), it->dimensions.z());
+            matchedCluster->push_back(*it);
+            idk.erase(idk.begin());
+            it = errorClusters->erase(it);
+
+            if (!idk.empty()) {
+                errorBoxes.insert(errorBoxes.end(), idk.begin(), idk.end());
+            }
+        }
+        else{
+            ++it;
+        }
+
+    }
+
+    if(errorClusters->size() == 1 && errorBoxes.size() == 1)
+    {
+        std::cout << "UPDATE!" << errorBoxes.size() << std::endl;
+        db->updateBox((*errorBoxes.begin())->getId(), errorClusters->begin()->centroid.x(), errorClusters->begin()->centroid.y(), errorClusters->begin()->centroid.z(), errorClusters->begin()->dimensions.x(), errorClusters->begin()->dimensions.y(), errorClusters->begin()->dimensions.z());
+        matchedCluster->push_back(*it);
+
+
+        //Get latest png from PhotoProcessing
+        auto directory = "/home/user/windows-share";
+        auto PNGPath = photoProcessing->findLatestPngFile(directory);
+        std::cout << "Path: " << PNGPath->c_str() << std::endl;
+
+        //check if Path is correct, return string if not correct ==> Error
+        if (!PNGPath) {
+            std::cout << "Error: No PNG file found" << std::endl;
+
+        }
+        //Integrate Cropping
+        //Box is sided
+        if(  errorClusters->begin()->dimensions.x() <  errorClusters->begin()->dimensions.z() ||  errorClusters->begin()->dimensions.y() <  errorClusters->begin()->dimensions.z()){
+            photoProcessing->cropToBox(PNGPath->c_str(),  errorClusters->begin()->centroid.x(),  errorClusters->begin()->centroid.y(),  errorClusters->begin()->dimensions.y(),  errorClusters->begin()->dimensions.x());
+        }
+        else{
+            photoProcessing->cropToBox(PNGPath->c_str(),  errorClusters->begin()->centroid.x(),  errorClusters->begin()->centroid.y(),  errorClusters->begin()->dimensions.x(),  errorClusters->begin()->dimensions.y());
+        }
+
+        auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
+        std::cout << "Crooped Path: " << PNGPathCropped->c_str() << std::endl;
+
+        //check if Path is correct, return string if not correct ==> Error
+        if (!PNGPathCropped) {
+            std::cout << "Error: No PNG file found" << std::endl;
+            ;
+        }
+        else {
+            //std::cout << "Looking for box with id " << std::endl;
+        }
+
+        std::cout << "NOT TRAINED - SAVE IMAGE" << std::endl;
+        photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),(*errorBoxes.begin())->getBoxId());
+
+
+    }
 }
 
 void UpdateTask::handleOtherErrors(bool error1, bool error2) {

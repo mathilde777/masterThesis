@@ -9,13 +9,16 @@
 #include <QThread>
 #include <QEventLoop>
 #include <QObject>
+#include "AddTask.h"
 #include "Database.h"
 #include "Detection2D.h"
+#include "FindTask.h"
 #include "TaskPreparer.h"
 #include "Detection3D.h"
 #include "Result.h"
 #include "BaseTask.h"
 #include "PhotoProcessing.h"
+#include "UpdateTask.h"
 
 class TaskManager : public QObject {
     Q_OBJECT
@@ -27,6 +30,8 @@ public:
     void prepTasks(int id);
     void trayDocked();
     void update(int id);
+    void executeUpdateTask(const int tray);
+    void updateKnownBoxes();
 
 private slots:
     void onTaskPrepared(std::shared_ptr<Task> task);
@@ -38,14 +43,24 @@ private:
     void waitForTasks();
     void executeTasks();
 
-    std::vector<std::shared_ptr<Box>> knownBoxes; // Changed to vector
-    std::deque<std::shared_ptr<BaseTask>> executingQueue; // Changed to deque for efficient pop_front
+    void executeFindTask(const std::shared_ptr<Task>& task);
+    void executeAddTask(const std::shared_ptr<Task>& task);
+
+    void removeExecutedTask(const std::shared_ptr<Task>& task);
+
+    std::vector<std::shared_ptr<KnownBox>> knownBoxes; // Changed to vector
+    std::deque<std::shared_ptr<Task>> executingQueue; // Changed to deque for efficient pop_front
     bool taskExecuting;
     bool donePreparing;
     bool noResults;
     int tray;
     std::shared_ptr<Database> db;
-    std::shared_ptr<PhotoProcessor> photoProcessing;
+    std::vector<std::shared_ptr<Box>> trayBoxes;
+    bool checkFlaggedBoxes(int productId);
+
+    std::shared_ptr<UpdateTask> updateTask;
+    std::shared_ptr<FindTask> findTask;
+    std::shared_ptr<AddTask> addTask;
 
 signals:
     void taskPrepared();

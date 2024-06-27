@@ -3,55 +3,73 @@
 #include "PhotoProcessing.h"
 #include "TaskFunctions.h"
 
-FindTask::FindTask(const std::shared_ptr<Task>& task) : task(task), noResults(false) {}
+FindTask::FindTask( std::shared_ptr<Database> db, std::vector<std::shared_ptr<KnownBox>> knownBoxes) : knownBoxes(knownBoxes){}
 
-void FindTask::execute(std::shared_ptr<Database> db) {
+void FindTask::execute(const std::shared_ptr<Task>& task) {
+    this->task = task;
+    noResults = false;
     std::cout << "finding box" << std::endl;
     Eigen::Vector3f lastPosition(task->getBox()->last_x, task->getBox()->last_y, task->getBox()->last_z);
     if (lastPosition == Eigen::Vector3f(0.0f, 0.0f, 0.0f)) {
-        executeFullTrayScan(db);
+        executeFullTrayScan();
     } else {
-        executePartialTrayScan(db, lastPosition);
+        executePartialTrayScan(lastPosition);
     }
 }
 
-void FindTask::executeFullTrayScan(std::shared_ptr<Database> db) {
+void FindTask::executeFullTrayScan() {
     std::cout << "FULL TRAY SCAN " << std::endl;
     auto resultsCluster = run3DDetection();
-    processBoxDetectionResult(db, resultsCluster);
+    processBoxDetectionResult(resultsCluster);
 }
 
-void FindTask::executePartialTrayScan(std::shared_ptr<Database> db, const Eigen::Vector3f& lastPosition) {
+void FindTask::executePartialTrayScan(const Eigen::Vector3f& lastPosition) {
     std::cout << "PARTIAL TRAY SCAN " << std::endl;
     auto resultsCluster = run3DDetection(lastPosition, task->getBox()->getClusterDimensions());
-    processBoxDetectionResult(db, resultsCluster);
+    processBoxDetectionResult(resultsCluster);
 }
 
-void FindTask::processBoxDetectionResult(std::shared_ptr<Database> db, const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster) {
+
+void FindTask::processBoxDetectionResult( std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster) {
     auto result = matchBox(resultsCluster);
     std::cout << "Result: " << result << std::endl;
 
     if (result != Eigen::Vector3f(0.0f, 0.0f, 0.0f)) {
-        handleSuccessfulBoxFound(db, result);
+        handleSuccessfulBoxFound(result);
     } else {
-        handleFailedBoxDetection(db);
+        if(noResults)
+        {
+            handleFailedBoxDetection();
+            removeExecutedTask();
+
+        }
+        else
+        {
+            executeFullTrayScan();
+        }
     }
 }
 
-void FindTask::handleSuccessfulBoxFound(std::shared_ptr<Database> db, const Eigen::Vector3f& result) {
-    std::cout << "task completed time to remove stored box" << task->getBoxId() << std::endl;
+void FindTask::removeExecutedTask()
+    {
+        //emit a remove task
+    }
+
+void FindTask::handleSuccessfulBoxFound( Eigen::Vector3f& result) {
+    std::cout << "task completed time to remove stored box: " << task->getBoxId() << std::endl;
     db->removeStoredBox(task->getBoxId());
     std::cout << "FOUND AT " << result << std::endl;
 }
 
-void FindTask::handleFailedBoxDetection(std::shared_ptr<Database> db) {
-    std::cout << "BOX not found" << task->getBoxId() << std::endl;
+void FindTask::handleFailedBoxDetection() {
+    std::cout << "BOX not found: " << task->getBoxId() << std::endl;
     std::cout << "Scanning the whole tray again" << std::endl;
-    executeFullTrayScan(db);
+    executeFullTrayScan();
 }
 
-Eigen::Vector3f  FindTask::match_box(const std::shared_ptr<std::vector<ClusterInfo>>& results)
-{Eigen::Vector3f  result = Eigen::Vector3f(0.0f,0.0f,0.0f);
+Eigen::Vector3f  FindTask::matchBox( std::shared_ptr<std::vector<ClusterInfo>>& results)
+{
+    Eigen::Vector3f  result = Eigen::Vector3f(0.0f,0.0f,0.0f);
 
     // Null pointer check
     if (!results || results->empty()) {
@@ -149,11 +167,11 @@ Eigen::Vector3f  FindTask::match_box(const std::shared_ptr<std::vector<ClusterIn
     }
     default: {
         std::cout << "Looking for box with ID: " << task->getBoxId() << std::endl;
-        for (const auto& box_id : possibleSameSize) {
-            std::cout << "Also these boxes are possible: " << box_id->getBoxId() << std::endl;
-        }
+       // for (const auto& box_id : possibleSameSize) {
+         //   std::cout << "Also these boxes are possible: " << box_id->getBoxId() << std::endl;
+       // }
         auto box = task->getBox();
-        sortResultsByDistance(results, task->getBox());
+        TaskFunctions::sortResultsByDistance(results, task->getBox());
 
         for (auto itn = results->begin(); itn != results->end();) {
 
@@ -239,4 +257,28 @@ Eigen::Vector3f  FindTask::match_box(const std::shared_ptr<std::vector<ClusterIn
     }
     return result;
 
+}
+
+
+bool FindTask::checkFlaggedBoxes(int productId)
+{
+    for(const auto& box: knownBoxes)
+    {
+        if(box->productId == productId)
+        {
+            std::cout << "box trained "<< box->trained << std::endl;
+            if( box->trained == 1)
+            {
+                return true;
+            }
+
+            else
+            {
+                return false;
+
+            }
+
+        }
+    }
+    return false;
 }

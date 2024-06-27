@@ -7,10 +7,11 @@
 #include "Box.h"
 #include "clusters.h"
 #include "Task.h"
+#include "knownBox.h"
 
 class TaskFunctions {
 public:
-    static bool checkFlaggedBoxes(int productId, const std::vector<std::shared_ptr<Box>>& knownBoxes);
+    static bool checkFlaggedBoxes(int productId, const std::vector<std::shared_ptr<KnownBox>>& knownBoxes);
 
     static Eigen::Vector3f matchBox(const std::shared_ptr<std::vector<ClusterInfo>>& results, const std::shared_ptr<Task>& task, bool& noResults);
     static bool dimensionsMatch(const ClusterInfo& cluster, const Box& box);

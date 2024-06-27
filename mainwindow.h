@@ -47,7 +47,7 @@ private:
     QTextEdit *statusText;
     QComboBox *findComboBox;
     QComboBox *boxComboBox;
-    QComboBox *trayComboBox;  // ComboBox for tray selection
+    QComboBox *trayComboBox;
     QComboBox *runTrayTasksComboBox;
     QPushButton *findButton;
     QPushButton *addButton;

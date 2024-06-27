@@ -2,10 +2,15 @@
 #include <iostream>
 #include "FindTask.h"
 #include "UpdateTask.h"
+#include "AddTask.h"
 
 TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db), taskExecuting(false), donePreparing(false), noResults(false) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
     knownBoxes = db->getKnownBoxes();
+     updateTask = std::make_shared<UpdateTask>(db);
+     addTask = std::make_shared<AddTask>(db);
+     findTask = std::make_shared<FindTask>(db,knownBoxes);
+
 }
 
 TaskManager::~TaskManager() {
@@ -62,8 +67,8 @@ void TaskManager::startExecutionLoop() {
             waitForTasks();
         }
     }
-    UpdateTask updateTask(tray);
-    updateTask.execute(db);
+
+    executeUpdateTask(tray);
     std::cout << "DONE EXECUTING TASKS" << std::endl;
 }
 
@@ -92,10 +97,10 @@ void TaskManager::executeTasks() {
 
     switch (task->getType()) {
     case 1:
-        executeAddBoxTask(task);
+        executeAddTask(task);
         break;
     case 0:
-        executeFindBoxTask(task);
+        executeFindTask(task);
         break;
     default:
         std::cout << "UNKNOWN TASK " << std::endl;
@@ -103,21 +108,28 @@ void TaskManager::executeTasks() {
     }
 }
 
-void TaskManager::executeAddBoxTask(const std::shared_ptr<Task>& task) {
+void TaskManager::executeAddTask(const std::shared_ptr<Task>& task) {
     emit updateStatus(QString("ADD: start to Add box with id %1").arg(task->getBoxId()));
     std::cout << "adding box" << std::endl;
-    db->storeBox(task->getBoxId(), task->getTray());
+    addTask->execute(task);
+    //db->storeBox(task->getBoxId(), task->getTray());
     removeExecutedTask(task);
 }
 
-void TaskManager::executeFindBoxTask(const std::shared_ptr<Task>& task) {
+void TaskManager::executeFindTask(const std::shared_ptr<Task>& task) {
     emit updateStatus(QString("FIND: start to find box with id %1").arg(task->getBoxId()));
     std::cout << "finding box" << std::endl;
-    FindTask findTask(task);
-    findTask.execute(db);
+    findTask->execute(task);
+
     removeExecutedTask(task);
 }
 
+void TaskManager::executeUpdateTask(int trayid) {
+
+    std::cout << "UPDATE" << std::endl;
+    updateTask->execute(trayid);
+
+}
 void TaskManager::removeExecutedTask(const std::shared_ptr<Task>& task) {
     db->removeTaskFromQueue(task->getId());
     executingQueue.pop_front();

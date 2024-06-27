@@ -7,7 +7,7 @@
 class BaseTask {
 public:
     virtual ~BaseTask() = default;
-    virtual void execute(std::shared_ptr<Database> db) = 0;
+    virtual void execute() = 0;
 };
 
 #endif // BASETASK_H

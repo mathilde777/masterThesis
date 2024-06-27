@@ -13,10 +13,10 @@
 #include "Detection3D.h"
 #include "Result.h"
 
-class UpdateTask : public BaseTask {
+class UpdateTask{
 public:
-    explicit UpdateTask(int trayId);
-    void execute(std::shared_ptr<Database> db) override;
+     UpdateTask(std::shared_ptr<Database> db);
+    void execute(int trayId) ;
 
 private:
     std::shared_ptr<Database> db;
@@ -28,7 +28,7 @@ private:
 
 
 
-    std::shared_ptr<PhotoProcessing> photoProcessing;
+    std::shared_ptr<PhotoProcessor> photoProcessing;
 
     bool checkForExtraBoxes(const std::vector<std::shared_ptr<Box>>& trayBoxes,
                             const std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster);
@@ -46,6 +46,8 @@ private:
     void sortTrayBoxesByID(std::vector<std::shared_ptr<Box>>& trayBoxes);
     bool isClusterAlreadyInList(int clusterId);
     void putZeroLocationBoxesAtBack(std::vector<std::shared_ptr<Box>>& trayBoxes);
+    void handleMatchedBoxes(std::shared_ptr<Database> db, const std::shared_ptr<Box>& box, std::vector<ClusterInfo>& matchedBoxes);
+    void handleErrorBoxes(std::shared_ptr<Database> db);
 };
 
 #endif // UPDATETASK_H

@@ -1,11 +1,12 @@
 #include "TaskFunctions.h"
 #include "PhotoProcessing.h"
 #include "Detection3D.h"
+#include "knownBox.h"
 #include <iostream>
 #include <algorithm>
 #include <cmath>
 
-bool TaskFunctions::checkFlaggedBoxes(int productId, const std::vector<std::shared_ptr<Box>>& knownBoxes) {
+bool TaskFunctions::checkFlaggedBoxes(int productId, const std::vector<std::shared_ptr<KnownBox>>& knownBoxes) {
     for (const auto& box : knownBoxes) {
         if (box->productId == productId) {
             return box->trained == 1;
