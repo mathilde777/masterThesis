@@ -14,10 +14,12 @@
 #include "PhotoProcessing.h"
 
 
-class FindTask{
+class FindTask: public QObject {
+    Q_OBJECT
+
 public:
    FindTask(std::shared_ptr<Database> db, std::vector<std::shared_ptr<KnownBox>> knownBoxes);
-    void execute(const std::shared_ptr<Task>& task) ;
+    void execute(const std::shared_ptr<Task>& task,   Eigen::Vector3f refernce) ;
 
 private:
     void executeFullTrayScan();
@@ -34,7 +36,12 @@ private:
       std::shared_ptr<PhotoProcessor> photoProcessing;
  std::vector<std::shared_ptr<KnownBox>> knownBoxes;
     bool checkFlaggedBoxes(int productId);
+      Eigen::Vector3f refernce;
 
+
+signals:
+    void taskCompleted();
+    void updateStatus(const QString &status);
 };
 
 #endif // FINDTASK_H

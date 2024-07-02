@@ -67,6 +67,7 @@ private:
     void populateBoxLists();
     void createInputDialog();
     void addNewKnownBox(const QString &width, const QString &height, const QString &length, const QString &name);
+    void processTrainingImage(const QString& selectedBox, const QString& fileName);
 };
 
 #endif // MAINWINDOW_H

@@ -3,14 +3,19 @@
 #include "PhotoProcessing.h"
 #include "TaskFunctions.h"
 
-FindTask::FindTask( std::shared_ptr<Database> db, std::vector<std::shared_ptr<KnownBox>> knownBoxes) : knownBoxes(knownBoxes){}
+FindTask::FindTask(std::shared_ptr<Database> db, std::vector<std::shared_ptr<KnownBox>> knownBoxes)
+    : db(db), knownBoxes(knownBoxes), noResults(false) {}
 
-void FindTask::execute(const std::shared_ptr<Task>& task) {
+void FindTask::execute(const std::shared_ptr<Task>& task,  Eigen::Vector3f ref) {
     this->task = task;
     noResults = false;
+    refernce = ref;
     std::cout << "finding box" << std::endl;
+      emit updateStatus(QString("FIND : start to find box with id %1").arg(task->getBoxId()));
     Eigen::Vector3f lastPosition(task->getBox()->last_x, task->getBox()->last_y, task->getBox()->last_z);
+    //first check if it is possible to do a partial scan
     if (lastPosition == Eigen::Vector3f(0.0f, 0.0f, 0.0f)) {
+        emit updateStatus(QString("FIND ERROR : box with id %1 has no previous location -> scanning full tray").arg(task->getBoxId()));
         executeFullTrayScan();
     } else {
         executePartialTrayScan(lastPosition);
@@ -19,44 +24,45 @@ void FindTask::execute(const std::shared_ptr<Task>& task) {
 
 void FindTask::executeFullTrayScan() {
     std::cout << "FULL TRAY SCAN " << std::endl;
-    auto resultsCluster = run3DDetection();
+    auto resultsCluster = run3DDetection(refernce);
     processBoxDetectionResult(resultsCluster);
 }
 
 void FindTask::executePartialTrayScan(const Eigen::Vector3f& lastPosition) {
     std::cout << "PARTIAL TRAY SCAN " << std::endl;
-    auto resultsCluster = run3DDetection(lastPosition, task->getBox()->getClusterDimensions());
+    emit updateStatus(QString("FIND : running partial 3D for %1").arg(task->getBoxId()));
+    auto resultsCluster = run3DDetection(refernce, lastPosition, task->getBox()->getClusterDimensions());
     processBoxDetectionResult(resultsCluster);
 }
 
-
-void FindTask::processBoxDetectionResult( std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster) {
+void FindTask::processBoxDetectionResult(std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster) {
     auto result = matchBox(resultsCluster);
     std::cout << "Result: " << result << std::endl;
+
 
     if (result != Eigen::Vector3f(0.0f, 0.0f, 0.0f)) {
         handleSuccessfulBoxFound(result);
     } else {
-        if(noResults)
-        {
+        if (noResults) {
             handleFailedBoxDetection();
-            removeExecutedTask();
-
-        }
-        else
-        {
+            //removeExecutedTask();
+        } else {
             executeFullTrayScan();
         }
     }
+    emit taskCompleted();
 }
 
-void FindTask::removeExecutedTask()
-    {
-        //emit a remove task
-    }
+void FindTask::removeExecutedTask() {
+    // Implement the logic for removing the task if needed
+}
 
-void FindTask::handleSuccessfulBoxFound( Eigen::Vector3f& result) {
+void FindTask::handleSuccessfulBoxFound(Eigen::Vector3f& result) {
     std::cout << "task completed time to remove stored box: " << task->getBoxId() << std::endl;
+    QString resultString = QString("%1, %2, %3").arg(result.x()).arg(result.y()).arg(result.z());
+    emit updateStatus(QString("FIND Successful: box found at %1").arg(resultString));
+    std::cout << "task completed time to remove stored box" << task->getBoxId() << std::endl;
+
     db->removeStoredBox(task->getBoxId());
     std::cout << "FOUND AT " << result << std::endl;
 }
@@ -64,61 +70,48 @@ void FindTask::handleSuccessfulBoxFound( Eigen::Vector3f& result) {
 void FindTask::handleFailedBoxDetection() {
     std::cout << "BOX not found: " << task->getBoxId() << std::endl;
     std::cout << "Scanning the whole tray again" << std::endl;
-    executeFullTrayScan();
+    emit updateStatus(QString("FIND ERROR : box with id %1 not found").arg(task->getBoxId()));
+    //here it has failed to determine the location, one can chose to then rpovide teh last known location if needed
+
 }
 
-Eigen::Vector3f  FindTask::matchBox( std::shared_ptr<std::vector<ClusterInfo>>& results)
-{
-    Eigen::Vector3f  result = Eigen::Vector3f(0.0f,0.0f,0.0f);
+Eigen::Vector3f FindTask::matchBox(std::shared_ptr<std::vector<ClusterInfo>>& results) {
+    Eigen::Vector3f result = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
 
-    // Null pointer check
     if (!results || results->empty()) {
         std::cerr << "ERROR: Invalid input data." << std::endl;
         return result;
     }
 
-    // Filter results based on dimensions
     auto it = std::remove_if(results->begin(), results->end(), [&](const ClusterInfo& info) {
         return !TaskFunctions::dimensionsMatch(info, *task->getBox());
     });
     results->erase(it, results->end());
 
-    switch(results->size()) {
-    case 0: {
-        result = Eigen::Vector3f(0.0f,0.0f,0.0f);
+    switch (results->size()) {
+    case 0:
+        result = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
         if(!noResults)
         {
             noResults = true;
         }
-    }
-    case 1: {
+        break;
 
-        auto itn = results->begin();
-        const auto& centroid = itn->centroid;
+    case 1: {
+        const auto& centroid = results->begin()->centroid;
         auto PNGPath = photoProcessing->findLatestPngFile("/home/user/windows-share");
         if (!PNGPath) {
             std::cerr << "ERROR: No PNG file found" << std::endl;
             break;
         }
 
-        // photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
-        //Box is sided
-        if( itn->dimensions.x() < itn->dimensions.z() || itn->dimensions.y() < itn->dimensions.z()){
-            if (itn->dimensions.x() > itn->dimensions.y()){
-                photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.y(), itn->dimensions.x());
-            }
-            else{
-                photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
-            }
-        }
-
-        else{
-            if (itn->dimensions.x() > itn->dimensions.y()){
-                photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.y(), itn->dimensions.x());
-            }
-            else{
-                photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
-            }
+        const auto& itn = results->begin();
+        if (itn->dimensions.x() < itn->dimensions.z() || itn->dimensions.y() < itn->dimensions.z()) {
+            photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(),
+                                       std::max(itn->dimensions.x(), itn->dimensions.y()), std::min(itn->dimensions.x(), itn->dimensions.y()));
+        } else {
+            photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(),
+                                       std::min(itn->dimensions.x(), itn->dimensions.y()), std::max(itn->dimensions.x(), itn->dimensions.y()));
         }
 
         auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
@@ -129,76 +122,44 @@ Eigen::Vector3f  FindTask::matchBox( std::shared_ptr<std::vector<ClusterInfo>>& 
 
         std::cout << "Looking for box with type ID: " << task->getBox()->getBoxId() << std::endl;
         std::shared_ptr<std::vector<DetectionResult>> res2D = run2D(PNGPathCropped->c_str(), 1);
-        if(TaskFunctions::checkFlaggedBoxes(task->getBox()->getBoxId(),knownBoxes))
-        {
-            if (!res2D->empty()) {
-                if (res2D->front().label != task->getBox()->getBoxId()) {
-
-                }
-                else {
-                    if (centroid.size() >= 3) {
-                        result << centroid(0), centroid(1), centroid(2);
-                    } else {
-                        std::cerr << "ERROR: Invalid centroid data." << std::endl;
-                    }
-                    break;
+        if (TaskFunctions::checkFlaggedBoxes(task->getBox()->getBoxId(), knownBoxes)) {
+            if (!res2D->empty() && res2D->front().label == task->getBox()->getBoxId()) {
+                if (centroid.size() >= 3) {
+                    result << centroid(0), centroid(1), centroid(2);
+                } else {
+                    std::cerr << "ERROR: Invalid centroid data." << std::endl;
                 }
             }
-            else {
-                break;
-            }
-        }
-        else
-
-        {
-            std::cout << "NOT TRAINED BOX IN FIND:" << task->getBox()->getBoxId() << std::endl;
-            //save image
-            photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),task->getBox()->getBoxId());
+        } else {
+            std::cout << "NOT TRAINED BOX IN FIND: " << task->getBox()->getBoxId() << std::endl;
+            photoProcessing->storeCroppedImage(PNGPathCropped->c_str(), task->getBox()->getBoxId());
             if (centroid.size() >= 3) {
                 result << centroid(0), centroid(1), centroid(2);
             } else {
                 std::cerr << "ERROR: Invalid centroid data." << std::endl;
             }
-            break;
         }
-
-
-
+        break;
     }
+
     default: {
         std::cout << "Looking for box with ID: " << task->getBoxId() << std::endl;
-       // for (const auto& box_id : possibleSameSize) {
-         //   std::cout << "Also these boxes are possible: " << box_id->getBoxId() << std::endl;
-       // }
         auto box = task->getBox();
         TaskFunctions::sortResultsByDistance(results, task->getBox());
 
         for (auto itn = results->begin(); itn != results->end();) {
-
             auto PNGPath = photoProcessing->findLatestPngFile("/home/user/windows-share");
             if (!PNGPath) {
                 std::cerr << "ERROR: No PNG file found" << std::endl;
                 break;
             }
 
-            // photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(), itn->dimensions.x(), itn->dimensions.y());
-            //Box is sided
-            if( it->dimensions.x() < it->dimensions.z() || it->dimensions.y() < it->dimensions.z()){
-                if (it->dimensions.x() > it->dimensions.y()){
-                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
-                }
-                else{
-                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
-                }
-            }
-
-            else{
-                if (it->dimensions.x() > it->dimensions.y()){
-                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.y(), it->dimensions.x());
-                }
-                else{
-                    photoProcessing->cropToBox(PNGPath->c_str(), it->centroid.x(), it->centroid.y(), it->dimensions.x(), it->dimensions.y());
-                }
+            if (itn->dimensions.x() < itn->dimensions.z() || itn->dimensions.y() < itn->dimensions.z()) {
+                photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(),
+                                           std::max(itn->dimensions.x(), itn->dimensions.y()), std::min(itn->dimensions.x(), itn->dimensions.y()));
+            } else {
+                photoProcessing->cropToBox(PNGPath->c_str(), itn->centroid.x(), itn->centroid.y(),
+                                           std::min(itn->dimensions.x(), itn->dimensions.y()), std::max(itn->dimensions.x(), itn->dimensions.y()));
             }
 
             auto PNGPathCropped = photoProcessing->findLatestCroppedImage();
@@ -210,31 +171,17 @@ Eigen::Vector3f  FindTask::matchBox( std::shared_ptr<std::vector<ClusterInfo>>& 
             std::cout << "Looking for box with ID: " << box->getBoxId() << std::endl;
             std::shared_ptr<std::vector<DetectionResult>> res2D = run2D(PNGPathCropped->c_str(), 1);
 
-            if(checkFlaggedBoxes(task->getBox()->getBoxId()))
-            {
-                if (!res2D->empty()) {
-                    if (res2D->front().label != task->getBox()->getBoxId()) {
-                        std::cout << "BOX type" << res2D->front().label << std::endl;
-                        itn = results->erase(itn);
-                    } else {
-                        ++itn;
-                    }
+            if (checkFlaggedBoxes(task->getBox()->getBoxId())) {
+                if (!res2D->empty() && res2D->front().label != task->getBox()->getBoxId()) {
+                    std::cout << "BOX type: " << res2D->front().label << std::endl;
+                    itn = results->erase(itn);
                 } else {
-                    break;
+                    ++itn;
                 }
+            } else {
+                photoProcessing->storeCroppedImage(PNGPathCropped->c_str(), task->getBox()->getBoxId());
+                break; // Assuming no need to continue in this case
             }
-            else
-
-            {
-                //save image
-                photoProcessing->storeCroppedImage(PNGPathCropped->c_str(),task->getBox()->getBoxId());
-                //no need to do anyhting else, we jsut take the first value
-            }
-
-        }
-
-        for (const auto& clusterA : *results) {
-            std::cout << "x " << clusterA.centroid.x() << "y " << clusterA.centroid.y() << "z " << clusterA.centroid.z() << std::endl;
         }
 
         if (!results->empty()) {
@@ -243,41 +190,21 @@ Eigen::Vector3f  FindTask::matchBox( std::shared_ptr<std::vector<ClusterInfo>>& 
                 result << centroid(0), centroid(1), centroid(2);
                 std::cout << result << std::endl;
             }
-        }
-        else {
-            result = Eigen::Vector3f(0.0f,0.0f,0.0f);
-            if(!noResults)
-            {
-                noResults = true;
-            }
-            break;
+        } else {
+            result = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+            noResults = !noResults;
         }
         break;
     }
     }
     return result;
-
 }
 
-
-bool FindTask::checkFlaggedBoxes(int productId)
-{
-    for(const auto& box: knownBoxes)
-    {
-        if(box->productId == productId)
-        {
-            std::cout << "box trained "<< box->trained << std::endl;
-            if( box->trained == 1)
-            {
-                return true;
-            }
-
-            else
-            {
-                return false;
-
-            }
-
+bool FindTask::checkFlaggedBoxes(int productId) {
+    for (const auto& box : knownBoxes) {
+        if (box->productId == productId) {
+            std::cout << "box trained " << box->trained << std::endl;
+            return box->trained == 1;
         }
     }
     return false;

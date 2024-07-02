@@ -32,10 +32,15 @@ public:
     void update(int id);
     void executeUpdateTask(const int tray);
     void updateKnownBoxes();
+     Eigen::Vector3f refernce;
+
+    void calibrateTray(int position, double height);
 
 private slots:
     void onTaskPrepared(std::shared_ptr<Task> task);
     void onTaskCompleted();
+
+    void updateUiStatus(const QString& message);
     void preparingDone();
 
 private:
@@ -61,6 +66,7 @@ private:
     std::shared_ptr<UpdateTask> updateTask;
     std::shared_ptr<FindTask> findTask;
     std::shared_ptr<AddTask> addTask;
+
 
 signals:
     void taskPrepared();

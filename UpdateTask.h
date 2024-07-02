@@ -13,10 +13,12 @@
 #include "Detection3D.h"
 #include "Result.h"
 
-class UpdateTask{
+class UpdateTask:public QObject {
+    Q_OBJECT
+
 public:
      UpdateTask(std::shared_ptr<Database> db);
-    void execute(int trayId) ;
+    void execute(int trayId,  Eigen::Vector3f refernce) ;
 
 private:
     std::shared_ptr<Database> db;
@@ -25,7 +27,7 @@ private:
     std::shared_ptr<std::vector<ClusterInfo>> matchedCluster;
     std::shared_ptr<std::vector<ClusterInfo>> errorClusters;
     std::vector<std::shared_ptr<Box>> errorBoxes;
-
+      Eigen::Vector3f refernce;
 
 
     std::shared_ptr<PhotoProcessor> photoProcessing;
@@ -48,6 +50,11 @@ private:
     void putZeroLocationBoxesAtBack(std::vector<std::shared_ptr<Box>>& trayBoxes);
     void handleMatchedBoxes(std::shared_ptr<Database> db, const std::shared_ptr<Box>& box, std::vector<ClusterInfo>& matchedBoxes);
     void handleErrorBoxes(std::shared_ptr<Database> db);
+
+
+signals:
+      void taskCompleted();
+    void updateStatus(const QString &status);
 };
 
 #endif // UPDATETASK_H

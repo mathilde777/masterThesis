@@ -8,8 +8,14 @@ TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db), taskExecuting(f
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
     knownBoxes = db->getKnownBoxes();
      updateTask = std::make_shared<UpdateTask>(db);
+     connect(updateTask.get(), &UpdateTask::taskCompleted, this, &TaskManager::onTaskCompleted);
+     connect(updateTask.get(), &UpdateTask::updateStatus, this, &TaskManager::updateUiStatus);
      addTask = std::make_shared<AddTask>(db);
+     connect(addTask.get(), &AddTask::taskCompleted, this, &TaskManager::onTaskCompleted);
+
      findTask = std::make_shared<FindTask>(db,knownBoxes);
+     connect(findTask.get(), &FindTask::taskCompleted, this, &TaskManager::onTaskCompleted);
+     connect(findTask.get(), &FindTask::updateStatus, this, &TaskManager::updateUiStatus);
 
 }
 
@@ -49,6 +55,7 @@ void TaskManager::preparingDone() {
 
 void TaskManager::trayDocked() {
     std::cout << "tray docked executing tasks" << std::endl;
+    refernce = db->getReferences(0); // this is still to be furthur developped so that depending on the tray position a different reference point is passed
     startExecutionLoop();
     emit trayDockedUpdate();
 }
@@ -119,7 +126,7 @@ void TaskManager::executeAddTask(const std::shared_ptr<Task>& task) {
 void TaskManager::executeFindTask(const std::shared_ptr<Task>& task) {
     emit updateStatus(QString("FIND: start to find box with id %1").arg(task->getBoxId()));
     std::cout << "finding box" << std::endl;
-    findTask->execute(task);
+    findTask->execute(task,refernce);
 
     removeExecutedTask(task);
 }
@@ -127,11 +134,23 @@ void TaskManager::executeFindTask(const std::shared_ptr<Task>& task) {
 void TaskManager::executeUpdateTask(int trayid) {
 
     std::cout << "UPDATE" << std::endl;
-    updateTask->execute(trayid);
+    updateTask->execute(trayid,refernce);
 
 }
 void TaskManager::removeExecutedTask(const std::shared_ptr<Task>& task) {
     db->removeTaskFromQueue(task->getId());
     executingQueue.pop_front();
     emit taskCompleted();
+}
+
+void TaskManager::updateUiStatus(const QString& message)
+{
+     emit updateStatus(message);
+}
+void TaskManager::calibrateTray(int position, double height)
+{
+
+    auto refPoint = calibrate(height);
+    db->addReference(position,refPoint.x(),refPoint.y(),refPoint.z());
+    emit updateStatus(QString("CALIBRATING TRAY"));
 }

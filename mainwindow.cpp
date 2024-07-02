@@ -9,6 +9,8 @@
 #include <QLineEdit>
 #include <QGroupBox>
 #include <QSpacerItem>
+#include <QFileDialog>
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), dockedTray(0),
@@ -261,10 +263,75 @@ void MainWindow::addNewKnownBox(const QString &width, const QString &height, con
     }
 }
 
-void MainWindow::addImages() {
-
-}
 void MainWindow::calibrate() {
+    std::array<double, 4> positions = {690, 500, 400, 700};
+    int positionIndex = 1;
+
+
+    tm->calibrateTray(positionIndex - 1,positions[positionIndex-1]);
 
 
 }
+
+void MainWindow::addImages()
+{
+    QDialog dialog(this);
+    dialog.setWindowTitle("Add Training Images");
+
+    QFormLayout formLayout(&dialog);
+
+    QLabel label("Select Untrained Known Box:");
+    QComboBox comboBox;
+    QPushButton fileButton("Choose Image File");
+    QLabel fileNameLabel("No file chosen");
+
+    // Populate comboBox with untrained known boxes
+    for (const auto& box : notStored) {
+        if (!box->trained) {
+            comboBox.addItem(QString("%1 - %2").arg(box->getProductId()).arg(QString::fromStdString(box->getProductName())));
+        }
+    }
+
+    formLayout.addRow(&label, &comboBox);
+    formLayout.addRow(&fileButton, &fileNameLabel);
+
+    QPushButton okButton("OK");
+    QPushButton cancelButton("Cancel");
+
+    formLayout.addRow(&okButton, &cancelButton);
+
+    // File dialog connection
+    connect(&fileButton, &QPushButton::clicked, [&]() {
+        QString fileName = QFileDialog::getOpenFileName(this, "Open Image File", "", "Images (*.png *.xpm *.jpg)");
+        if (!fileName.isEmpty()) {
+            fileNameLabel.setText(fileName);
+        }
+    });
+
+    connect(&okButton, &QPushButton::clicked, [&]() {
+        QString selectedBox = comboBox.currentText();
+        QString fileName = fileNameLabel.text();
+
+        if (selectedBox.isEmpty() || fileName == "No file chosen") {
+            QMessageBox::warning(this, "Input Error", "Please select a known box and an image file.");
+        } else {
+            dialog.accept();
+            processTrainingImage(selectedBox, fileName);
+        }
+    });
+
+    connect(&cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    dialog.exec();
+}
+
+void MainWindow::processTrainingImage(const QString& selectedBox, const QString& fileName)
+{
+    QStringList parts = selectedBox.split(" - ");
+    int id = parts[0].toInt();
+    std::string fileNameStd = fileName.toStdString();
+    db->addTrainingImage(id, fileNameStd);
+    QMessageBox::information(this, "Success", QString("Added training image for box ID %1: %2").arg(id).arg(fileName));
+}
+
+

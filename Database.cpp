@@ -62,7 +62,7 @@ void Database::newKnownBox(std::string name, double width, double height,double 
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
-    }
+}
 //std::vector<std::tuple<int, std::string, int, int>>
 std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
     std::vector<std::shared_ptr<Task>> tasks;
@@ -299,7 +299,7 @@ int Database::getTrayId(int box_id) {
 
             // Check if the result set is valid and process it
             if (resultSet && resultSet->next()) {
-                id = resultSet->getInt("trayId");
+                id = resultSet->getInt("trayid");
             }
         } while (pstmt->getMoreResults()); // Consume any additional result sets
 
@@ -311,37 +311,9 @@ int Database::getTrayId(int box_id) {
 }
 
 
-// Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
-std::vector<int> Database::getUnstoredBoxes() {
-    std::vector<int> unstoredBoxes;
 
-    try {
-        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetUnstoredBoxes()"));
-        bool isResult = pstmt->execute(); // Execute the stored procedure
-
-        if (isResult) {
-            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
-
-            while (resultSet && resultSet->next()) {
-                int boxId = resultSet->getInt("id");
-                unstoredBoxes.push_back(boxId);
-            }
-        }
-
-        // Consume any additional result sets to avoid "Commands out of sync" error
-        while (pstmt->getMoreResults()) {
-            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
-        }
-    } catch (sql::SQLException& e) {
-        std::cerr << "SQL error: " << e.what() << std::endl;
-    }
-
-    return unstoredBoxes;
-}
-
-// Add a new method to your Database class to call the stored procedure and retrieve the list of unstored box IDs
 std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
-  std::vector<std::shared_ptr<KnownBox>> knownBoxes = std::vector<std::shared_ptr<KnownBox>>();
+    std::vector<std::shared_ptr<KnownBox>> knownBoxes = std::vector<std::shared_ptr<KnownBox>>();
     //std::vector<std::shared_ptr<KnownBox>> knownBoxes;
 
     try {
@@ -357,7 +329,7 @@ std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
                 int new_box = resultSet->getInt("newBox");
                 int trained = resultSet->getInt("trained");
 
-                  std::shared_ptr<KnownBox> box = std::make_shared<KnownBox>(boxId, boxName, new_box, trained);
+                std::shared_ptr<KnownBox> box = std::make_shared<KnownBox>(boxId, boxName, new_box, trained);
 
                 knownBoxes.push_back(box);
             }
@@ -375,6 +347,7 @@ std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
 }
 
 
+
 std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
     std::vector<std::pair<int, std::string>> storedBoxes;
 
@@ -387,7 +360,7 @@ std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
 
             while (resultSet && resultSet->next()) {
                 int id = resultSet->getInt("id");
-                int boxId = resultSet->getInt("boxId");
+                int boxId = resultSet->getInt("boxid");
                 std::string boxName = resultSet->getString("productName");
                 storedBoxes.push_back(std::make_pair(id, boxName));
             }
@@ -434,6 +407,49 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
     return dimensions;
 }
 
+Eigen::Vector3f Database::getReferences(int position) {
+    Eigen::Vector3f refPoint(0.0f, 0.0f, 0.0f); // Initialize to a default value
+
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetReference(?)"));
+        pstmt->setInt(1, position);
+        bool hasResults = pstmt->execute(); // Execute the stored procedure
+
+        if (hasResults) {
+            std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
+
+            if (resultSet && resultSet->next()) {
+                float x = resultSet->getDouble("referenceX");
+                float y = resultSet->getDouble("referenceY");
+                float z = resultSet->getDouble("referenceZ");
+                refPoint = Eigen::Vector3f(x, y, z);
+            }
+        }
+
+        // Consume any additional result sets to avoid "Commands out of sync" error
+        while (pstmt->getMoreResults()) {
+            std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
+        }
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+
+    return refPoint;
+}
+
+void Database::addReference(int posId, float x,float y, float z ) {
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL addReference(?,?, ?, ?)"));
+        pstmt->setInt(1, posId);
+        pstmt->setDouble(2, x);
+        pstmt->setDouble(3, y);
+        pstmt->setDouble(4, z);
+        pstmt->execute();
+
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
+}
 
 std::shared_ptr<Box> Database::getBox(int tray, int Id) {
     std::shared_ptr<Box> box;
@@ -471,8 +487,8 @@ std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
 
             while (resultSet && resultSet->next()) {
                 int id = resultSet->getInt("id");
-                int boxId = resultSet->getInt("boxId");
-                int trayId = resultSet->getInt("trayId");
+                int boxId = resultSet->getInt("boxid");
+                int trayId = resultSet->getInt("trayid");
                 double lastX = resultSet->getDouble("lastX");
                 double lastY = resultSet->getDouble("lastY");
                 double lastZ = resultSet->getDouble("lastZ");
@@ -500,5 +516,17 @@ std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
     }
 
     return boxes;
+}
+
+void Database::addTrainingImage(int box_id, std::string pic ) {
+    try {
+        std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL addTrainingImage(?, ?)"));
+        pstmt->setInt(1, box_id);
+        pstmt->setString(2, pic);
+        pstmt->execute();
+        std::cout << "Training image added " << std::endl;
+    } catch (sql::SQLException& e) {
+        std::cerr << "SQL error: " << e.what() << std::endl;
+    }
 }
 

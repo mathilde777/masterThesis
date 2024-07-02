@@ -6,7 +6,9 @@
 #include "Database.h"
 #include "Task.h"
 
-class AddTask  {
+class AddTask  : public QObject {
+    Q_OBJECT
+
 public:
     AddTask(std::shared_ptr<Database> db);
     void execute(const std::shared_ptr<Task>& task );
@@ -14,6 +16,10 @@ public:
 private:
     std::shared_ptr<Task> task;
     std::shared_ptr<Database> db;
+
+
+signals:
+    void taskCompleted();
 };
 
 #endif // ADDTASK_H
