@@ -107,7 +107,7 @@ The project is created and run in QT creator: https://www.qt.io/download-dev
     - Logic for updating the tray.
 
 15. **knownBox.h**
-    -a type of box that is known. these are pulled form the database and are the boxes that can be added to trays
+    - a type of box that is known. these are pulled form the database and are the boxes that can be added to trays
 
 22. **main.cpp**
     - Entry point of the program.
