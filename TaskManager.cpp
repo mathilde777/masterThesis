@@ -1,131 +1,156 @@
-
 #include "TaskManager.h"
-#include "database.h"
+#include <iostream>
+#include "FindTask.h"
+#include "UpdateTask.h"
+#include "AddTask.h"
 
-TaskManager::TaskManager() {
+TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db), taskExecuting(false), donePreparing(false), noResults(false) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
+    knownBoxes = db->getKnownBoxes();
+     updateTask = std::make_shared<UpdateTask>(db);
+     connect(updateTask.get(), &UpdateTask::taskCompleted, this, &TaskManager::onTaskCompleted);
+     connect(updateTask.get(), &UpdateTask::updateStatus, this, &TaskManager::updateUiStatus);
+     addTask = std::make_shared<AddTask>(db);
+     connect(addTask.get(), &AddTask::taskCompleted, this, &TaskManager::onTaskCompleted);
+
+     findTask = std::make_shared<FindTask>(db,knownBoxes);
+     connect(findTask.get(), &FindTask::taskCompleted, this, &TaskManager::onTaskCompleted);
+     connect(findTask.get(), &FindTask::updateStatus, this, &TaskManager::updateUiStatus);
+
 }
 
 TaskManager::~TaskManager() {
     disconnect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
-
-}
-void TaskManager::addTask(int boxId, int trayId, int task) {
-    // Implementation for adding a task
 }
 
-bool sortByPriority(const Task& task1, const Task& task2) {
-    if (task1.task_type != task2.task_type)
-        return task1.task_type < task2.task_type;
-    return task1.id < task2.id;
+void TaskManager::updateKnownBoxes() {
+    knownBoxes = db->getKnownBoxes();
 }
-void TaskManager::getTasks(int trayId)
-{
-     Database db = Database();
-    queue = db.getTasks(trayId);
 
-    for (const Task& task : queue) {
-        std::cout << task.getId() << std::endl; 
-    }
-    
-    //sort is so the adds are first!!!!
-    sort(queue.begin(), queue.end(), sortByPriority);  
-    for (const Task& task : queue) {
-        std::cout << task.getId() << std::endl; 
-    }
+void TaskManager::prepTasks(int id) {
+    std::cout << "about to make the tasks" << std::endl;
+    QThread* thread = new QThread;
+    tray = id;
+    trayBoxes = db->getAllBoxesInTray(id);
+    TaskPreparer* preparer = new TaskPreparer(id, db);
+
+    preparer->moveToThread(thread);
+
+    connect(preparer, &TaskPreparer::taskPrepared, this, &TaskManager::onTaskPrepared);
+    connect(thread, &QThread::started, preparer, &TaskPreparer::prepareTask);
+    connect(preparer, &TaskPreparer::finished, this, &TaskManager::preparingDone);
+    connect(thread, &QThread::finished, thread, &QThread::deleteLater);
+
+    thread->start();
 }
-void TaskManager::prepFirstFind()
-{
-    //here all preprocessing for the first add
+
+bool TaskManager::checkFlaggedBoxes(int productId) {
+    return TaskFunctions::checkFlaggedBoxes(productId, knownBoxes);
 }
-void TaskManager::prepTasks(int id)
-{
-    getTasks(id);
+
+void TaskManager::preparingDone() {
+    std::cout << "DONE PREPARING" << std::endl;
+    donePreparing = true;
 }
+
 void TaskManager::trayDocked() {
-     std::cout << "tray docked executing tasks"<< std::endl;
-     executeTasks();
+    std::cout << "tray docked executing tasks" << std::endl;
+    refernce = db->getReferences(0); // this is still to be furthur developped so that depending on the tray position a different reference point is passed
+    startExecutionLoop();
+    emit trayDockedUpdate();
 }
 
-int TaskManager::executeTasks() {
-    if (!queue.empty()) {
-        Task task = queue.front();
-        if(task.getType() == 1)
-        {
+void TaskManager::onTaskPrepared(std::shared_ptr<Task> task) {
+    executingQueue.push_back(task);
+    std::cout << "task prepped and added to execute" << std::endl;
+    emit taskPrepared();
+}
 
-            std ::cout << "adding box" << std::endl;
-            Database db = Database();
-            db.storeBox(task.getBoxId(),task.getTray());
-
+void TaskManager::startExecutionLoop() {
+    while (!executingQueue.empty() || !donePreparing) {
+        if (!executingQueue.empty()) {
+            executeTasks();
+        } else if (!donePreparing) {
+            waitForTasks();
         }
-        else if(task.getType()==0)
-        {
-            Database db = Database();
-            if(db.checkExistingBoxes(task.getTray(), task.getBoxId()))
-            {
-                //hre we starts 2 threads
-                // decide how to cmomprae;
-                std::cout << "RUN 2D imageing" << std::endl;
-                std::unique_ptr<DetectionResult> result = run2D("test4.jpeg");
-                std::cout << result->label << std::endl;
-
-
-
-                std::cout << "RUN 3D imaging" << std::endl;
-            }
-            else
-            {
-                std::cout << "RUN 3D imaging" << std::endl;
-            }
-
-            std::cout << "task completed time to remove stored box"<< task.getBoxId()  << std::endl;
-            db.removeStoredBox(task.getBoxId());
-
-        }
-
-
-        std::cout << "arrived at emit" << std::endl;
-        emit onTaskCompleted();
-
     }
-    else {
-        std::cout << "All tasks executed." << std::endl;
-    }
-    return 0; // Placeholder return value
+
+    executeUpdateTask(tray);
+    std::cout << "DONE EXECUTING TASKS" << std::endl;
+}
+
+void TaskManager::waitForTasks() {
+    std::cout << "waiting for TASKS" << std::endl;
+    QEventLoop loop;
+    connect(this, &TaskManager::taskPrepared, &loop, &QEventLoop::quit);
+    loop.exec();
+    disconnect(this, &TaskManager::taskPrepared, &loop, &QEventLoop::quit);
 }
 
 void TaskManager::onTaskCompleted() {
-     Database db = Database();
-    std::cout << "arrived at complete" << std::endl;
-    db.removeTaskFromQueue(queue.begin()->getId());
-    queue.erase(queue.begin());
+    std::cout << "task done" << std::endl;
     emit refresh();
-    for (const Task& task : queue) {
-        std::cout << task.getId() << std::endl;
+    taskExecuting = false;
+}
+
+void TaskManager::executeTasks() {
+    noResults = false;
+    if (taskExecuting || executingQueue.empty()) {
+        return;
     }
 
-    if (!queue.empty()) {
+    auto task = executingQueue.front();
+    taskExecuting = true;
 
-        std::cout << "arrive new execture" << std::endl;
-        executeTasks();
-    }
-    else
-    {
-        std::cout << "UPDATE DATABASE - ALL TASKS DONE" << std::endl;
+    switch (task->getType()) {
+    case 1:
+        executeAddTask(task);
+        break;
+    case 0:
+        executeFindTask(task);
+        break;
+    default:
+        std::cout << "UNKNOWN TASK " << std::endl;
+        break;
     }
 }
 
-int TaskManager::addBox() {
-    // Implementation for adding a box
-    return 0; // Placeholder return value
+void TaskManager::executeAddTask(const std::shared_ptr<Task>& task) {
+    emit updateStatus(QString("ADD: start to Add box with id %1").arg(task->getBoxId()));
+    std::cout << "adding box" << std::endl;
+    addTask->execute(task);
+    //db->storeBox(task->getBoxId(), task->getTray());
+    removeExecutedTask(task);
 }
 
-int TaskManager::findBox() {
-    // Implementation for finding a box
-    return 0; // Placeholder return value
+void TaskManager::executeFindTask(const std::shared_ptr<Task>& task) {
+    emit updateStatus(QString("FIND: start to find box with id %1").arg(task->getBoxId()));
+    std::cout << "finding box" << std::endl;
+    findTask->execute(task,refernce);
+
+    removeExecutedTask(task);
 }
 
-void TaskManager::update()
+void TaskManager::executeUpdateTask(int trayid) {
+
+    std::cout << "UPDATE" << std::endl;
+    updateTask->execute(trayid,refernce);
+
+}
+void TaskManager::removeExecutedTask(const std::shared_ptr<Task>& task) {
+    db->removeTaskFromQueue(task->getId());
+    executingQueue.pop_front();
+    emit taskCompleted();
+}
+
+void TaskManager::updateUiStatus(const QString& message)
+{
+     emit updateStatus(message);
+}
+void TaskManager::calibrateTray(int position, double height)
 {
 
+    auto refPoint = calibrate(height);
+    db->addReference(position,refPoint.x(),refPoint.y(),refPoint.z());
+    emit updateStatus(QString("CALIBRATING TRAY"));
 }

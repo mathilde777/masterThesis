@@ -1,5 +1,5 @@
 #include "mainwindow.h"
-#include "database.h"
+#include "Database.h"
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
@@ -7,13 +7,21 @@
 #include <iostream>
 #include <array>
 #include <string>
-#include "detection2D.h"
+#include "Detection2D.h"
 #include <QDebug>
+#include "pcl_3d.h"
+#include <QMetaType>
+#include <memory>
+#include "Task.h" // Make sure this includes your Task class definition
+
+using namespace std;
 //#include <QtSqlDatabase>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    qRegisterMetaType<std::shared_ptr<Task>>("std::shared_ptr<Task>");
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -24,7 +32,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    MainWindow w;
+MainWindow w;
     w.show();
 
 
@@ -59,3 +67,54 @@ int main(int argc, char *argv[])
     **/
 
 }
+
+int test()
+{
+    cout << "Hello World!" << endl;
+
+    //PLY Files
+    string filePathBoxes = "/home/suleyman/Desktop/MasterThesis/ModelsV3/kinect_middle.ply";
+    string filePathEmpty = "/home/suleyman/Desktop/MasterThesis/ModelsV3/empty_tray.ply";
+    string filePathBrownBox = "/home/suleyman/Desktop/MasterThesis/ModelsV3/3box_center_big_gap.ply";
+    string filePathBrownBox2 = "/home/suleyman/Desktop/MasterThesis/ModelsV3/kinect_top.ply";
+    string fileboxsmallgap = "/home/suleyman/Desktop/MasterThesis/ModelsV3/3box_center_v2_low_gap.ply";
+    string filetwoboxtogether = "/home/suleyman/Desktop/MasterThesis/ModelsV3/2box_together_edge_v2.ply";
+    string fileboxangled = "/home/suleyman/Desktop/MasterThesis/ModelsV3/whitebox_angled.ply";
+
+    //initiate pcl_3d
+    PCL_3D pcl3d;
+    auto refPoint = pcl3d.calibrateTray(filePathEmpty, 690);
+
+    //put ref point manually for now : Reference point: 457 352.699 699.949"
+    //auto refPoint = Eigen::Vector3f(457, 352.699, 699.949);
+
+    cout << "Reference point: " << refPoint.x() << " " << refPoint.y() << " " << refPoint.z() << endl;
+
+
+
+    auto location = pcl3d.findBoundingBox(fileboxangled , filePathEmpty, refPoint, Eigen::Vector3f(0, 0, 0));
+
+    //location is type of clusterInfo ==> struct ClusterInfo { Eigen::Vector4f centroid, Eigen::Vector3f dimensions; Eigen::Quaternionf orientation; int clusterId;
+    for (auto loc : location)
+    {
+        cout << "Cluster ID: " << loc.clusterId << endl;
+        cout << "Centroid: " << loc.centroid.x() << " " << loc.centroid.y() << " " << loc.centroid.z() << endl;
+        cout << "Dimensions: " << loc.dimensions.x() << " " << loc.dimensions.y() << " " << loc.dimensions.z() << endl;
+        cout << "Orientation: " << loc.orientation.x() << " " << loc.orientation.y() << " " << loc.orientation.z() << " " << loc.orientation.w() << endl;
+    }
+
+
+    return 0;
+}
+
+
+//todo
+/**
+- COORDINATE SYSTEM
+- ADDING TAKS WHILE DOCKED
+- 2D LOGIC
+- 3D LOGIC
+
+
+
+**/

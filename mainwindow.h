@@ -2,18 +2,19 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QMainWindow>
-#include <QLineEdit>
+#include <QComboBox>
+#include <QListWidget>
+#include <QLabel>
+#include <QDateTime>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QMessageBox>
-#include "TaskManager.h"
-#include "database.h"
-#include "qcombobox.h"
-#include "task.h"
+#include <QTextEdit>
 #include <QTimer>
-
+#include <QMessageBox>
+#include <memory>
+#include "Database.h"
+#include "TaskManager.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -24,49 +25,49 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
-  //  Database db;
-    TaskManager tm;
-    std::vector<int> knownBoxes;
-    std::vector<int> notStored;
-    std::vector<int> storedBoxes;
-    void populateBoxLists();
 
 private slots:
     void findButtonClicked();
     void addButtonClicked();
-    void trayButtonClicked(int trayNumber);
-
-
+    void updateDockedInfo();
+    void updateStatusText(const QString& message);
+    void updateButtonClicked();
+    void newBoxClicked();
+    void addImages();
+    void trayButtonClicked();
+    void calibrate();
 private:
-    QLineEdit *idLineEdit;
-    QLineEdit *trayIdLineEdit;
-    QPushButton *findButton;
-    QPushButton *addButton;
-    QPushButton *trayButtons[3];
-    QPushButton *trayLeaving;
     Ui::MainWindow *ui;
     int dockedTray;
-    QList<int> addList;
-    QList<int> findList;
-    QList<int> trayList;
+    std::shared_ptr<Database> db;
+    std::unique_ptr<TaskManager> tm;
+    QLabel *dockedInfoLabel;
+    QTextEdit *statusText;
     QComboBox *findComboBox;
     QComboBox *boxComboBox;
     QComboBox *trayComboBox;
+    QComboBox *runTrayTasksComboBox;
+    QPushButton *findButton;
+    QPushButton *addButton;
+    QPushButton *runTasksButton;
+    QPushButton *updateButton;
+    QPushButton *calibration;
+    QPushButton *addNewBox;
+    QPushButton *addTrainingImages;
+    QHBoxLayout *toleranceLayout;
+    QTimer *trayTimer;
+    std::vector<std::pair<int, std::string>> storedBoxes;
+    std::vector<std::shared_ptr<KnownBox>> notStored;
     QLabel *selectBoxLabel;
     QLabel *selectBoxLabel2;
     QLabel *selectTrayLabel;
-    QVBoxLayout *findLayout;
-    QVBoxLayout *addLayout;
-    QHBoxLayout *toleranceLayout;
-    QSlider *toleranceSlider;
-    QTimer *trayTimer;
 
-
-signals:
-    void trayDocked();
+    void populateBoxLists();
+    void createInputDialog();
+    void addNewKnownBox(const QString &width, const QString &height, const QString &length, const QString &name);
+    void processTrainingImage(const QString& selectedBox, const QString& fileName);
 };
-#endif // MAINWINDOW_H
 
+#endif // MAINWINDOW_H
