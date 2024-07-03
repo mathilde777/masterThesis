@@ -8,7 +8,7 @@ this code is run with 2 other sources:
 - 2D object recognition system: https://github.com/sulikismaylovv/2D_detection
 - MySQL database: see dump file provided
 
-The projected is created and run in QT creator: https://www.qt.io/download-dev
+The project is created and run in QT creator: https://www.qt.io/download-dev
 ## Requirements
 ### Software Dependencies
 - **Qt6** (Core, Widgets, Sql)
