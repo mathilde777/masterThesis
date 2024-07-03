@@ -4,9 +4,27 @@ Project Overview
 This project is a comprehensive implementation for managing various tasks related to detection and processing. The codebase is organized in C++ and includes functionalities for handling 2D and 3D detections, database interactions, and task management.
 
 this code is run with 2 other sources:
-- 3D localization library:
-     https://github.com/sulikismaylovv/library_3D
-- 2D object recognition system
+- 3D localization library:https://github.com/sulikismaylovv/library_3D
+- 2D object recognition system: https://github.com/sulikismaylovv/2D_detection
+
+The projected is created and run in QT creator: https://www.qt.io/download-dev
+## Requirements
+
+### Operating System
+- Unix-like OS (e.g., Linux)
+
+### Software Dependencies
+- **Qt6** (Core, Widgets, Sql)
+- **PCL (Point Cloud Library)** (common, io, filters, visualization, segmentation, surface)
+- **OpenCV**
+- **MySQL Connector/C++**
+- **libcurl**
+
+### Hardware Requirements
+- **Processor:** Multi-core CPU (quad-core or higher recommended)
+- **RAM:** At least 8 GB (16 GB or higher recommended)
+- **Storage:** Sufficient space to store libraries, dependencies, and simulation data
+- **Graphics:** Dedicated GPU recommended for heavy visualization tasks
 
 
 Directory Structure
