@@ -6,6 +6,7 @@ This project is a comprehensive implementation for managing various tasks relate
 this code is run with 2 other sources:
 - 3D localization library:https://github.com/sulikismaylovv/library_3D
 - 2D object recognition system: https://github.com/sulikismaylovv/2D_detection
+- MySQL database: 
 
 The projected is created and run in QT creator: https://www.qt.io/download-dev
 ## Requirements
