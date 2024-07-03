@@ -1,13 +1,13 @@
 #ifndef TASK_H
 #define TASK_H
 
-
 #include "Box.h"
 #include <memory>
 
+//TASK TYPES
 // 0 -> find
-// 1-> add
-//2 -> update
+// 1 -> add
+// 2 -> update
 class Task{
 public:
     int id;

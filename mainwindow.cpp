@@ -173,7 +173,8 @@ void MainWindow::findButtonClicked() {
     if (parts.size() == 2) {
         int id = parts[0].toInt();
         int tray = db->getTrayId(id);
-        db->addTask(id, 0, tray); // Assuming 0 is the task type for finding
+         QMessageBox::information(this, "Find", QString("Find button clicked with ID: %1").arg(id));
+        db->addTask(id, 0, tray);
     } else {
         QMessageBox::warning(this, "Error", "Invalid selection");
     }
@@ -185,6 +186,7 @@ void MainWindow::addButtonClicked() {
     if (parts.size() == 2) {
         int id = parts[0].toInt();
         int tray = trayComboBox->currentText().toInt();
+        QMessageBox::information(this, "Add", QString("Add box with product id %1").arg(id));
 
         if (tray == dockedTray && tray == 0) {
             db->addTask(id, 1, dockedTray);

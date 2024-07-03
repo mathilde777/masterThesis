@@ -133,22 +133,6 @@ std::vector<DetectionResult> getLabels(const std::string& buffer, int index) {
         result.label = label;
         results.push_back(result);
 
-
-        /**
-         size_t pos = buffer.find("Box");
-        if (pos != std::string::npos) {
-            // Extract the substring starting from the position after "Box"
-            std::string boxNumber = buffer.substr(pos + 3);
-            // Convert the substring to an integer
-            int number = std::stoi(boxNumber);
-            DetectionResult detectionResult;
-            detectionResult.label = number;
-
-            results.push_back(detectionResult);
-
-        }
-**/
-
     }
 
     return results;

@@ -1,5 +1,7 @@
 #include "FindTask.h"
 #include <iostream>
+#include "Detection2D.h"
+#include "Detection3D.h"
 #include "PhotoProcessing.h"
 #include "TaskFunctions.h"
 
@@ -61,8 +63,6 @@ void FindTask::handleSuccessfulBoxFound(Eigen::Vector3f& result) {
     std::cout << "task completed time to remove stored box: " << task->getBoxId() << std::endl;
     QString resultString = QString("%1, %2, %3").arg(result.x()).arg(result.y()).arg(result.z());
     emit updateStatus(QString("FIND Successful: box found at %1").arg(resultString));
-    std::cout << "task completed time to remove stored box" << task->getBoxId() << std::endl;
-
     db->removeStoredBox(task->getBoxId());
     std::cout << "FOUND AT " << result << std::endl;
 }

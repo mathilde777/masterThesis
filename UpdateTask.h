@@ -2,9 +2,7 @@
 #define UPDATETASK_H
 
 #include <memory>
-#include "BaseTask.h"
 #include "Database.h"
-#include "TaskFunctions.h"
 #include "Box.h"
 #include "clusters.h"
 #include <vector>
@@ -12,6 +10,7 @@
 #include "Detection2D.h"
 #include "Detection3D.h"
 #include "Result.h"
+#include "TaskFunctions.h"
 
 class UpdateTask:public QObject {
     Q_OBJECT
@@ -53,7 +52,7 @@ private:
 
 
 signals:
-      void taskCompleted();
+    void taskCompleted();
     void updateStatus(const QString &status);
 };
 

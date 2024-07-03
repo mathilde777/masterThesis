@@ -4,7 +4,7 @@
 #include <memory.h>
 #include "Detection3D.h"
 #include <cmath> // For std::abs
-//std::shared_ptr<std::vector<ClusterInfo>>
+
 std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f  reference,Eigen::Vector3f lastPosititon,Eigen::Vector3f dimensions) {
     PCL_3D pcl3d;
     auto conversionX = 6.50f;
@@ -28,14 +28,12 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f  refer
 
 
 
-    //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
-
+    //--------- EDIT
+    //
+    //the the file path must be editited to your specific laptop
     std::string trayFilePath = "/home/user/windows-share/empty/2024.5.16.13.38.37_Color_PointCloud.ply";
-
-    //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
-    // auto refPoint = Eigen::Vector3f(456, 363.967, 699.949);
-    //Update dimension by conversion factor (multiply by conversion factor for x,y) and z by conversion factor*1.5
-    //dimensions = Eigen::Vector3f(dimensions.x()*conversionX,dimensions.y()*conversionY,dimensions.z()*(conversionZ));
+    //
+    //---------
 
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,reference,lastPosititon,dimensions);
 
@@ -72,12 +70,16 @@ std::shared_ptr<std::vector<ClusterInfo>> run3DDetection( Eigen::Vector3f  refer
     else{
         std::cout << "PLY file found" << std::endl;
     }
-    //std::string trayFilePath = "/home/suleyman/Desktop/MasterThesis/ModelsV4/empty.ply";
+
+
+    //--------- EDIT
+    //
+    //the the file path must be editited to your specific laptop
     std::string trayFilePath = "/home/user/windows-share/empty/2024.5.16.13.38.37_Color_PointCloud.ply";
+    //
+    //---------
 
-    //auto refPoint = pcl3d.calibrateTray(boxFilePath->c_str(), 690);
 
-    //auto refPoint = Eigen::Vector3f(458.649, 359, 699.949);
     auto boundingBoxInfo = pcl3d.findBoundingBox(boxFilePath->c_str(), trayFilePath,reference);
     for (auto loc : boundingBoxInfo)
     {

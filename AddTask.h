@@ -2,7 +2,6 @@
 #define ADDTASK_H
 
 #include <memory>
-#include "BaseTask.h"
 #include "Database.h"
 #include "Task.h"
 

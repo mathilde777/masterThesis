@@ -36,7 +36,14 @@ Database::Database() {
 Database::~Database() {
     delete con;
 }
-
+/**
+ * @brief Database::addTask
+ * @param box_id
+ * @param task_type
+ * @param tray_id
+ *
+ * adds a task to database
+ */
 void Database::addTask(int box_id, int task_type, int tray_id ) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL add_to_queue(?, ?, ?)"));
@@ -49,6 +56,14 @@ void Database::addTask(int box_id, int task_type, int tray_id ) {
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
+/**
+ * @brief Database::newKnownBox
+ * @param name
+ * @param width
+ * @param height
+ * @param lenght
+ * creates a new known box in the database
+ */
 void Database::newKnownBox(std::string name, double width, double height,double  lenght)
 {
     try {
@@ -63,7 +78,13 @@ void Database::newKnownBox(std::string name, double width, double height,double 
         std::cerr << "SQL error: " << e.what() << std::endl;
     }
 }
-//std::vector<std::tuple<int, std::string, int, int>>
+
+/**
+ * @brief Database::getTasks
+ * @param tray_id
+ * @return
+ * returns all tasks for a tray
+ */
 std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
     std::vector<std::shared_ptr<Task>> tasks;
     try {
@@ -90,7 +111,18 @@ std::vector<std::shared_ptr<Task>> Database::getTasks(int tray_id) {
     return tasks;
 }
 
-
+/**
+ * @brief Database::updateBox
+ * @param id
+ * @param last_x
+ * @param last_y
+ * @param last_z
+ * @param cx
+ * @param cy
+ * @param cz
+ * updates the position of a box in the tray stored in the database
+ *
+ */
 void Database::updateBox(int id,double last_x, double last_y,double last_z,double cx, double cy,double cz) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL updateBox(?,?, ?, ?, ?,?,?)"));
@@ -108,7 +140,12 @@ void Database::updateBox(int id,double last_x, double last_y,double last_z,doubl
     }
 }
 
-
+/**
+ * @brief Database::storeBox
+ * @param id
+ * @param tray
+ *  adds a box to teh tray adn thus the database
+ */
 void Database::storeBox(int id, int tray) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL store_box(?, ?)"));
@@ -118,12 +155,16 @@ void Database::storeBox(int id, int tray) {
         std::cout << "Box with ID " << id << " stored in tray " << tray << std::endl;
     } catch (sql::SQLException& e) {
         std::cerr << "SQL error: " << e.what() << std::endl;
-    }
-    //emit taskCompleted();
+    }   
 }
 
 
-
+/**
+ * @brief Database::checkStoredBoxes
+ * @param boxId
+ * @return
+ * checks if a box is stored
+ */
 bool Database::checkStoredBoxes( int boxId) {
     bool foundBox = false;
     try {
@@ -148,6 +189,12 @@ bool Database::checkStoredBoxes( int boxId) {
     }
     return foundBox;
 }
+/**
+ * @brief Database::checkKnownBoxes
+ * @param boxId
+ * @return
+ * check if a box is known
+ */
 
 bool Database::checkKnownBoxes(int boxId) {
     bool foundBox = false;
@@ -156,17 +203,16 @@ bool Database::checkKnownBoxes(int boxId) {
         pstmt->setInt(1, boxId);
         pstmt->execute();
 
-        // Consume any potential result sets to avoid "Commands out of sync" error
+
         while (pstmt->getMoreResults()) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
-            // Not expecting data here, just consume any possible result set
+
         }
 
         // Now, retrieve the output parameter value
         std::unique_ptr<sql::Statement> stmt(con->createStatement());
         std::unique_ptr<sql::ResultSet> rs(stmt->executeQuery("SELECT @found_box AS found_box"));
 
-        // Check the value of @found_box
         if (rs && rs->next()) {
             foundBox = rs->getBoolean("found_box"); // Use column label for clarity
         }
@@ -183,7 +229,11 @@ bool Database::checkKnownBoxes(int boxId) {
 
 
 
-
+/**
+ * @brief Database::removeStoredBox
+ * @param boxId
+ * remove a stored box from the database
+ */
 void Database::removeStoredBox(int boxId) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL RemoveStoredBox(?)"));
@@ -203,7 +253,12 @@ void Database::removeStoredBox(int boxId) {
 }
 
 
-// Execute MySQL stored procedure to get information about a box
+/**
+ * @brief Database::getBoxInfo
+ * @param Id
+ * @return
+ * returns all data about a box
+ */
 std::tuple<int, double, double, double, double, double, double,Eigen::Vector3f> Database::getBoxInfo(int Id) {
     std::tuple<int, double, double, double, double, double, double,Eigen::Vector3f> boxInfo;
 
@@ -242,7 +297,13 @@ std::tuple<int, double, double, double, double, double, double,Eigen::Vector3f> 
     return boxInfo;
 }
 
-// Execute MySQL stored procedure to check if a box with the same dimensions exists
+/**
+ * @brief Database::checkExistingBoxes
+ * @param tray_id
+ * @param box_id
+ * @return
+ * checks if there are boxes of sme dimensions in a certain tray
+ */
 bool Database::checkExistingBoxes(int tray_id, int box_id) {
     bool exists = false;
     try {
@@ -250,14 +311,14 @@ bool Database::checkExistingBoxes(int tray_id, int box_id) {
         pstmt->setInt(1, tray_id);
         pstmt->setInt(2, box_id);
 
-        bool isResult = pstmt->execute(); // Execute the query
+        bool isResult = pstmt->execute();
 
         if (isResult) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
             exists = resultSet && resultSet->next();
         }
 
-        // Consume any additional unexpected result sets
+
         while (pstmt->getMoreResults()) {
             std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
         }
@@ -268,6 +329,11 @@ bool Database::checkExistingBoxes(int tray_id, int box_id) {
 }
 
 
+/**
+ * @brief Database::removeTaskFromQueue
+ * @param taskId
+ * remove task once executed
+ */
 
 void Database::removeTaskFromQueue(int taskId) {
     try {
@@ -286,6 +352,12 @@ void Database::removeTaskFromQueue(int taskId) {
     }
 }
 
+/**
+ * @brief Database::getTrayId
+ * @param box_id
+ * @return
+ * get tray id from stored box
+ */
 int Database::getTrayId(int box_id) {
     int id = 0;
 
@@ -310,15 +382,19 @@ int Database::getTrayId(int box_id) {
     return id;
 }
 
-
+/**
+ * @brief Database::getKnownBoxes
+ * @return
+ * return all known boxes in a tray
+ */
 
 std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
     std::vector<std::shared_ptr<KnownBox>> knownBoxes = std::vector<std::shared_ptr<KnownBox>>();
-    //std::vector<std::shared_ptr<KnownBox>> knownBoxes;
+
 
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL allKnownBoxes()"));
-        bool isResult = pstmt->execute(); // Execute the stored procedure
+        bool isResult = pstmt->execute();
 
         if (isResult) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
@@ -347,7 +423,11 @@ std::vector<std::shared_ptr<KnownBox>> Database::getKnownBoxes() {
 }
 
 
-
+/**
+ * @brief Database::getStoredBoxes
+ * @return
+ * returns all stored boxes
+ */
 std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
     std::vector<std::pair<int, std::string>> storedBoxes;
 
@@ -376,6 +456,12 @@ std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
 
     return storedBoxes;
 }
+/**
+ * @brief Database::getBoxDimensions
+ * @param Id
+ * @return
+ * returns the box dimesnions
+ */
 
 std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
     std::tuple<double, double, double> dimensions;
@@ -383,7 +469,7 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL GetBoxDimensions(?)"));
         pstmt->setInt(1, Id);
-        bool hasResults = pstmt->execute(); // Execute the stored procedure
+        bool hasResults = pstmt->execute();
 
         if (hasResults) {
             std::unique_ptr<sql::ResultSet> resultSet(pstmt->getResultSet());
@@ -396,7 +482,7 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
             }
         }
 
-        // Consume any additional result sets to avoid "Commands out of sync" error
+
         while (pstmt->getMoreResults()) {
             std::unique_ptr<sql::ResultSet> additionalResults(pstmt->getResultSet());
         }
@@ -407,6 +493,13 @@ std::tuple<double, double, double> Database::getBoxDimensions(int Id) {
     return dimensions;
 }
 
+/**
+ * @brief Database::getReferences
+ * @param position
+ * @return
+ * gets refernce calulated for each specific position of the tray.
+ * the tray can arrive at different heights and this takes reference allows the resystem to take it into account
+ */
 Eigen::Vector3f Database::getReferences(int position) {
     Eigen::Vector3f refPoint(0.0f, 0.0f, 0.0f); // Initialize to a default value
 
@@ -437,6 +530,14 @@ Eigen::Vector3f Database::getReferences(int position) {
     return refPoint;
 }
 
+/**
+ * @brief Database::addReference
+ * @param posId
+ * @param x
+ * @param y
+ * @param z
+ * once calibrated the tray refences can be upated in the database
+ */
 void Database::addReference(int posId, float x,float y, float z ) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL addReference(?,?, ?, ?)"));
@@ -451,6 +552,13 @@ void Database::addReference(int posId, float x,float y, float z ) {
     }
 }
 
+/**
+ * @brief Database::getBox
+ * @param tray
+ * @param Id
+ * @return
+ * returns a box and its infromation
+ */
 std::shared_ptr<Box> Database::getBox(int tray, int Id) {
     std::shared_ptr<Box> box;
 
@@ -474,6 +582,12 @@ std::shared_ptr<Box> Database::getBox(int tray, int Id) {
     return box;
 }
 
+/**
+ * @brief Database::getAllBoxesInTray
+ * @param trayId
+ * @return
+ * get a list of stored boxes in a tray
+ */
 std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
     std::vector<std::shared_ptr<Box>> boxes;
 
@@ -518,6 +632,12 @@ std::vector<std::shared_ptr<Box>> Database::getAllBoxesInTray(int trayId) {
     return boxes;
 }
 
+/**
+ * @brief Database::addTrainingImage
+ * @param box_id
+ * @param pic
+ * adds a pictrue location to the database
+ */
 void Database::addTrainingImage(int box_id, std::string pic ) {
     try {
         std::unique_ptr<sql::PreparedStatement> pstmt(con->prepareStatement("CALL addTrainingImage(?, ?)"));
