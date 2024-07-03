@@ -1,7 +1,6 @@
 #ifndef RESULT_H
 #define RESULT_H
 
-#include <string>
 #include "clusters.h"
 
 class Result {

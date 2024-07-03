@@ -2,23 +2,21 @@
 #define FINDTASK_H
 
 #include <memory>
-#include "BaseTask.h"
+
 #include "Database.h"
 #include "Eigen/src/Core/Matrix.h"
 #include "Task.h"
 #include <Eigen/Core>
 #include <vector>
-#include "Detection2D.h"
-#include "Detection3D.h"
-#include "Result.h"
 #include "PhotoProcessing.h"
+#include "clusters.h"
 
 
 class FindTask: public QObject {
     Q_OBJECT
 
 public:
-   FindTask(std::shared_ptr<Database> db, std::vector<std::shared_ptr<KnownBox>> knownBoxes);
+    FindTask(std::shared_ptr<Database> db, std::vector<std::shared_ptr<KnownBox>> knownBoxes);
     void execute(const std::shared_ptr<Task>& task,   Eigen::Vector3f refernce) ;
 
 private:
@@ -28,15 +26,16 @@ private:
     void handleSuccessfulBoxFound(  Eigen::Vector3f& result);
     void handleFailedBoxDetection();
     Eigen::Vector3f matchBox( std::shared_ptr<std::vector<ClusterInfo>>& resultsCluster);
-
     void removeExecutedTask();
-    std::shared_ptr<Task> task;
-      bool noResults;
-    std::shared_ptr<Database> db;
-      std::shared_ptr<PhotoProcessor> photoProcessing;
- std::vector<std::shared_ptr<KnownBox>> knownBoxes;
     bool checkFlaggedBoxes(int productId);
-      Eigen::Vector3f refernce;
+
+    std::shared_ptr<Task> task;    
+    std::shared_ptr<Database> db;
+    std::shared_ptr<PhotoProcessor> photoProcessing;
+    std::vector<std::shared_ptr<KnownBox>> knownBoxes;
+
+    Eigen::Vector3f refernce;
+    bool noResults;
 
 
 signals:

@@ -11,7 +11,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Sql)
+
+# Find PCL
 find_package(PCL 1.3 REQUIRED COMPONENTS common io filters visualization segmentation surface)
+
+# Find OpenCV
 find_package(OpenCV REQUIRED)
 
 include_directories(${PCL_INCLUDE_DIRS})
@@ -41,23 +45,22 @@ set(SOURCES
     Box.h
     Task.h
     Detection3D.h
-     knownBox.h
-     errorManager.cpp
-     errorManager.h
-     BaseTask.h
-     Addtask.cpp
-     AddTask.h
-     UpdateTask.h
-     FindTask.h
-     UpdateTask.cpp
-     FindTask.cpp
+    knownBox.h
+    BaseTask.h
+    Addtask.cpp
+    AddTask.h
+    UpdateTask.h
+    FindTask.h
+    UpdateTask.cpp
+    FindTask.cpp
+    TaskFunctions.h
+    TaskFunctions.cpp
+
 )
 
 # Add an executable target
 add_executable(simulation ${SOURCES}
-    TaskFunctions.h
-    TaskFunctions.cpp
-    functions.cpp
+
 
 
 

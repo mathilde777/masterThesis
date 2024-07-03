@@ -1,10 +1,8 @@
 #include "TaskManager.h"
 #include <iostream>
-#include "FindTask.h"
-#include "UpdateTask.h"
-#include "AddTask.h"
 
-TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db), taskExecuting(false), donePreparing(false), noResults(false) {
+
+TaskManager::TaskManager(std::shared_ptr<Database> db) : db(db), taskExecuting(false), donePreparing(false) {
     connect(this, &TaskManager::taskCompleted, this, &TaskManager::onTaskCompleted);
     knownBoxes = db->getKnownBoxes();
      updateTask = std::make_shared<UpdateTask>(db);
@@ -94,7 +92,6 @@ void TaskManager::onTaskCompleted() {
 }
 
 void TaskManager::executeTasks() {
-    noResults = false;
     if (taskExecuting || executingQueue.empty()) {
         return;
     }
@@ -147,9 +144,10 @@ void TaskManager::updateUiStatus(const QString& message)
 {
      emit updateStatus(message);
 }
+
+//calibrate runs the calibrate function in Detectin3D and allows the system to consider that the tray can arrive at 1 of 4 position which affects its height to the camera.
 void TaskManager::calibrateTray(int position, double height)
 {
-
     auto refPoint = calibrate(height);
     db->addReference(position,refPoint.x(),refPoint.y(),refPoint.z());
     emit updateStatus(QString("CALIBRATING TRAY"));
