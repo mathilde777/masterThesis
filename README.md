@@ -4,7 +4,8 @@ Project Overview
 This project is a comprehensive implementation for managing various tasks related to detection and processing. The codebase is organized in C++ and includes functionalities for handling 2D and 3D detections, database interactions, and task management.
 
 this code is run with 2 other sources:
-- 3D localization library
+- 3D localization library:
+     https://github.com/sulikismaylovv/library_3D
 - 2D object recognition system
 
 
