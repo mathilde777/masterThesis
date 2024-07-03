@@ -1,4 +1,4 @@
-Welcome to our thesis called Localization of known objects to allow object picking
+Welcome to our thesis called Localization of Known Objects to allow Object Picking
 Project Overview
 ----------------
 This project is a comprehensive implementation for managing various tasks related to detection and processing. The codebase is organized in C++ and includes functionalities for handling 2D and 3D detections, database interactions, and task management.
