@@ -14,7 +14,7 @@ The projected is created and run in QT creator: https://www.qt.io/download-dev
 - **Qt6** (Core, Widgets, Sql)
 - **PCL (Point Cloud Library)** (common, io, filters, visualization, segmentation, surface)
 - **OpenCV**
-- **MySQL Connector/C++**
+- **MySQL Connector/C++:** reguired for the connection between the database and the algo. (https://dev.mysql.com/downloads/connector/cpp/ , https://dev.mysql.com/doc/connector-cpp/9.0/en/ , also see CMakeLists.txt)
 - **libcurl**
 
 Directory Structure
