@@ -26,6 +26,7 @@ void FindTask::execute(const std::shared_ptr<Task>& task,  Eigen::Vector3f ref) 
 
 void FindTask::executeFullTrayScan() {
     std::cout << "FULL TRAY SCAN " << std::endl;
+     emit updateStatus(QString("FIND : running full 3D for %1").arg(task->getBoxId()));
     auto resultsCluster = run3DDetection(refernce);
     processBoxDetectionResult(resultsCluster);
 }
@@ -47,7 +48,7 @@ void FindTask::processBoxDetectionResult(std::shared_ptr<std::vector<ClusterInfo
     } else {
         if (noResults) {
             handleFailedBoxDetection();
-            //removeExecutedTask();
+
         } else {
             executeFullTrayScan();
         }
@@ -55,9 +56,6 @@ void FindTask::processBoxDetectionResult(std::shared_ptr<std::vector<ClusterInfo
     emit taskCompleted();
 }
 
-void FindTask::removeExecutedTask() {
-    // Implement the logic for removing the task if needed
-}
 
 void FindTask::handleSuccessfulBoxFound(Eigen::Vector3f& result) {
     std::cout << "task completed time to remove stored box: " << task->getBoxId() << std::endl;
