@@ -440,7 +440,7 @@ std::vector<std::pair<int, std::string>> Database::getStoredBoxes() {
 
             while (resultSet && resultSet->next()) {
                 int id = resultSet->getInt("id");
-                int boxId = resultSet->getInt("boxid");
+                int boxId = resultSet->getInt("boxId");
                 std::string boxName = resultSet->getString("productName");
                 storedBoxes.push_back(std::make_pair(id, boxName));
             }

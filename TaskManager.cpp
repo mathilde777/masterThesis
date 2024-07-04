@@ -116,7 +116,6 @@ void TaskManager::executeAddTask(const std::shared_ptr<Task>& task) {
     emit updateStatus(QString("ADD: start to Add box with id %1").arg(task->getBoxId()));
     std::cout << "adding box" << std::endl;
     addTask->execute(task);
-    //db->storeBox(task->getBoxId(), task->getTray());
     removeExecutedTask(task);
 }
 
@@ -132,8 +131,8 @@ void TaskManager::executeUpdateTask(int trayid) {
 
     std::cout << "UPDATE" << std::endl;
     updateTask->execute(trayid,refernce);
-
 }
+
 void TaskManager::removeExecutedTask(const std::shared_ptr<Task>& task) {
     db->removeTaskFromQueue(task->getId());
     executingQueue.pop_front();
